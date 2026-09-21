@@ -12,7 +12,7 @@
     --bg-deep: #0a0713;
     --bg-mid: #150f28;
     --bg-glow: #1f1638;
-    --bg-card: rgba(21, 15, 40, 0.85);
+    --bg-card: rgba(21, 15, 40, 0.88);
     
     --blob-a: #ff9d7a;
     --blob-b: #ff5f8f;
@@ -25,7 +25,6 @@
     --text-dim: rgba(253, 249, 244, 0.45);
     --border-color: rgba(255, 138, 91, 0.35);
 
-    /* Default Font replaced with Pixel Font from user request */
     --font-active: 'Press Start 2P', monospace;
     --greet-scale: 1;
     --creature-scale: 1;
@@ -35,7 +34,7 @@
     --bg-deep: #080608;
     --bg-mid: #140d11;
     --bg-glow: #24141a;
-    --bg-card: rgba(20, 13, 17, 0.88);
+    --bg-card: rgba(20, 13, 17, 0.9);
     --blob-a: #d56e4c;
     --blob-b: #e8734a;
     --text-primary: #f2e3d5;
@@ -47,7 +46,7 @@
     --bg-deep: #0f380f;
     --bg-mid: #184818;
     --bg-glow: #245824;
-    --bg-card: rgba(15, 56, 15, 0.9);
+    --bg-card: rgba(15, 56, 15, 0.92);
     --blob-a: #8bac0f;
     --blob-b: #9bbc0f;
     --eye-white: #e0f0c0;
@@ -62,7 +61,7 @@
     --bg-deep: #080018;
     --bg-mid: #150030;
     --bg-glow: #280050;
-    --bg-card: rgba(20, 0, 45, 0.9);
+    --bg-card: rgba(20, 0, 45, 0.92);
     --blob-a: #00ffcc;
     --blob-b: #ff007f;
     --eye-white: #ffffff;
@@ -77,7 +76,7 @@
     --bg-deep: #120424;
     --bg-mid: #220840;
     --bg-glow: #380d60;
-    --bg-card: rgba(34, 8, 64, 0.9);
+    --bg-card: rgba(34, 8, 64, 0.92);
     --blob-a: #ff71ce;
     --blob-b: #01cdfe;
     --eye-white: #ffffff;
@@ -142,46 +141,85 @@
     50% { opacity: 0.75; }
   }
 
-  /* Top Right Controls */
-  #topControls {
+  /* Sleek Collapsible Gear Widget */
+  #gearWidget {
     position: absolute;
     top: calc(16px + env(safe-area-inset-top, 0px));
     right: 18px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    z-index: 30;
-  }
-
-  .pixel-btn {
     background: var(--bg-card);
     border: 2px solid var(--border-color);
+    box-shadow: 2px 2px 0px var(--border-color);
+    backdrop-filter: blur(8px);
+    z-index: 30;
+    opacity: 0.35;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  #gearWidget:hover, #gearWidget.active {
+    opacity: 1;
+    box-shadow: 4px 4px 0px var(--border-color);
+  }
+
+  .gear-trigger {
+    background: transparent;
+    border: none;
     color: var(--text-primary);
     font-family: var(--font-active);
-    font-size: 11px;
-    padding: 6px 12px;
+    font-size: 16px;
+    width: 36px;
+    height: 36px;
     cursor: pointer;
-    box-shadow: 2px 2px 0px var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.1s ease, background 0.2s ease;
     outline: none;
-    backdrop-filter: blur(8px);
+    transition: transform 0.3s ease, color 0.2s ease;
   }
-  .pixel-btn:hover {
+  #gearWidget:hover .gear-trigger, #gearWidget.active .gear-trigger {
+    transform: rotate(90deg);
+    color: var(--text-accent);
+  }
+
+  .gear-menu {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.35s ease;
+    padding-right: 0;
+  }
+  #gearWidget:hover .gear-menu, #gearWidget.active .gear-menu {
+    max-width: 240px;
+    opacity: 1;
+    padding-right: 6px;
+  }
+
+  .gear-btn {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--font-active);
+    font-size: 11px;
+    padding: 6px 10px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gear-btn:hover {
     background: var(--text-accent);
     color: var(--bg-deep);
   }
-  .pixel-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0px 0px 0px transparent;
-  }
-  .pixel-btn.icon-only {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    font-size: 14px;
+  .gear-btn:active {
+    transform: scale(0.94);
   }
 
   /* Original Blob Creature */
@@ -431,11 +469,14 @@
 <div id="crtOverlay"></div>
 <div id="stars"></div>
 
-<!-- Top Controls -->
-<div id="topControls">
-  <button class="pixel-btn icon-only" id="sizeDown" title="Smaller Text">–</button>
-  <button class="pixel-btn icon-only" id="sizeUp" title="Bigger Text">+</button>
-  <button class="pixel-btn" id="openSettings" title="Customization Settings">⚙ FLEXIBILITY</button>
+<!-- Sleek Collapsible Gear Widget -->
+<div id="gearWidget">
+  <button id="gearTrigger" class="gear-trigger" title="Settings & Text Size">⚙</button>
+  <div class="gear-menu">
+    <button class="gear-btn" id="sizeDown" title="Smaller Text">–</button>
+    <button class="gear-btn" id="sizeUp" title="Bigger Text">+</button>
+    <button class="gear-btn" id="openSettings" title="Full Settings">MENU</button>
+  </div>
 </div>
 
 <!-- Greeting -->
@@ -510,12 +551,12 @@
 
 <div id="hint">move, click, or drag it — everything is flexible ⚙</div>
 
-<!-- Flexibility & Settings Modal -->
+<!-- Settings Modal / Flexibility Drawer -->
 <div id="modalBackdrop">
   <div id="settingsModal">
     <div class="modal-header">
       <div class="modal-title">⚙ FLEXIBILITY & SETTINGS</div>
-      <button class="pixel-btn icon-only" id="closeModal">✕</button>
+      <button class="gear-btn" id="closeModal">✕</button>
     </div>
 
     <!-- Font Selector -->
@@ -548,10 +589,14 @@
       <input type="text" id="customNameInput" class="setting-input" value="Aayush" placeholder="Enter name...">
     </div>
 
-    <!-- Text Scale Slider -->
+    <!-- Text Scale Slider + Buttons -->
     <div class="setting-group">
       <label class="setting-label" id="textScaleLabel">4. TEXT SCALE (1.0x)</label>
-      <input type="range" id="textScaleSlider" class="range-slider" min="0.6" max="2.0" step="0.05" value="1.0">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="gear-btn" id="modalSizeDown" style="padding: 6px 12px; font-size: 12px;">–</button>
+        <input type="range" id="textScaleSlider" class="range-slider" min="0.6" max="2.0" step="0.05" value="1.0" style="flex: 1;">
+        <button class="gear-btn" id="modalSizeUp" style="padding: 6px 12px; font-size: 12px;">+</button>
+      </div>
     </div>
 
     <!-- Creature Scale Slider -->
@@ -565,11 +610,11 @@
       <label class="setting-label">6. RETRO EFFECTS & AUDIO</label>
       <div class="toggle-row">
         <span>CRT Scanlines Filter</span>
-        <button class="pixel-btn" id="toggleCrt">OFF</button>
+        <button class="gear-btn" id="toggleCrt">OFF</button>
       </div>
       <div class="toggle-row">
         <span>8-Bit Sound FX</span>
-        <button class="pixel-btn" id="toggleAudio">OFF</button>
+        <button class="gear-btn" id="toggleAudio">OFF</button>
       </div>
     </div>
   </div>
@@ -666,6 +711,8 @@
   var greetingLine2 = document.getElementById('greetingLine2');
   var crtOverlay = document.getElementById('crtOverlay');
   var modalBackdrop = document.getElementById('modalBackdrop');
+  var gearWidget = document.getElementById('gearWidget');
+  var gearTrigger = document.getElementById('gearTrigger');
 
   var currentName = 'Aayush';
   var currentGreetString = '';
@@ -760,10 +807,30 @@
     recalc();
   }
 
+  // Gear Trigger Click / Hover Behavior
+  gearTrigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    gearWidget.classList.toggle('active');
+    play8BitSound('click');
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!gearWidget.contains(e.target)) {
+      gearWidget.classList.remove('active');
+    }
+  });
+
+  // Size Controls (both in expandable gear bar and modal)
   document.getElementById('sizeUp').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale + 0.1); });
   document.getElementById('sizeDown').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale - 0.1); });
+  document.getElementById('modalSizeUp').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale + 0.1); });
+  document.getElementById('modalSizeDown').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale - 0.1); });
 
-  document.getElementById('openSettings').addEventListener('click', function () { play8BitSound('click'); modalBackdrop.classList.add('open'); });
+  document.getElementById('openSettings').addEventListener('click', function () {
+    play8BitSound('click');
+    modalBackdrop.classList.add('open');
+    gearWidget.classList.remove('active');
+  });
   document.getElementById('closeModal').addEventListener('click', function () { play8BitSound('click'); modalBackdrop.classList.remove('open'); });
   modalBackdrop.addEventListener('click', function (e) { if (e.target === modalBackdrop) { play8BitSound('click'); modalBackdrop.classList.remove('open'); } });
 
@@ -1050,14 +1117,14 @@
 
   window.addEventListener('click', function (e) {
     if (suppressNextClick) { suppressNextClick = false; return; }
-    if (wrap.contains(e.target) || e.target.closest('#topControls') || e.target.closest('#modalBackdrop')) return;
+    if (wrap.contains(e.target) || e.target.closest('#gearWidget') || e.target.closest('#modalBackdrop')) return;
     registerActivity();
     mode = 'chase';
     spawnBall(e.clientX, Math.min(e.clientY, floorY - 40));
   });
 
   window.addEventListener('dblclick', function (e) {
-    if (e.target.closest('#topControls') || e.target.closest('#modalBackdrop')) return;
+    if (e.target.closest('#gearWidget') || e.target.closest('#modalBackdrop')) return;
     registerActivity();
     startledUntil = now() + 420;
     triggerJump(760);
