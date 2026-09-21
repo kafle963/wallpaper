@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interactive Blob Wallpaper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Pixelify+Sans:wght@400;600;700&family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0713;
+    --bg-mid: #150f28;
+    --bg-glow: #1f1638;
+    --bg-card: rgba(21, 15, 40, 0.85);
+    
+    --blob-a: #ff9d7a;
+    --blob-b: #ff5f8f;
+    --eye-white: #fdf9f4;
+    --pupil: #1c1420;
+    --hint: rgba(253, 249, 244, 0.4);
+    
+    --text-primary: #fdf9f4;
+    --text-accent: #ff8a5b;
+    --text-dim: rgba(253, 249, 244, 0.45);
+    --border-color: rgba(255, 138, 91, 0.35);
+
+    /* Default Font replaced with Pixel Font from user request */
+    --font-active: 'Press Start 2P', monospace;
+    --greet-scale: 1;
+    --creature-scale: 1;
+  }
+
+  [data-theme="terracotta"] {
+    --bg-deep: #080608;
+    --bg-mid: #140d11;
+    --bg-glow: #24141a;
+    --bg-card: rgba(20, 13, 17, 0.88);
+    --blob-a: #d56e4c;
+    --blob-b: #e8734a;
+    --text-primary: #f2e3d5;
+    --text-accent: #d56e4c;
+    --border-color: rgba(213, 110, 76, 0.4);
+  }
+
+  [data-theme="gameboy"] {
+    --bg-deep: #0f380f;
+    --bg-mid: #184818;
+    --bg-glow: #245824;
+    --bg-card: rgba(15, 56, 15, 0.9);
+    --blob-a: #8bac0f;
+    --blob-b: #9bbc0f;
+    --eye-white: #e0f0c0;
+    --pupil: #0f380f;
+    --text-primary: #9bbc0f;
+    --text-accent: #8bac0f;
+    --text-dim: rgba(155, 188, 15, 0.5);
+    --border-color: #8bac0f;
+  }
+
+  [data-theme="cyberpunk"] {
+    --bg-deep: #080018;
+    --bg-mid: #150030;
+    --bg-glow: #280050;
+    --bg-card: rgba(20, 0, 45, 0.9);
+    --blob-a: #00ffcc;
+    --blob-b: #ff007f;
+    --eye-white: #ffffff;
+    --pupil: #080018;
+    --text-primary: #ffffff;
+    --text-accent: #00ffcc;
+    --text-dim: rgba(0, 255, 204, 0.5);
+    --border-color: #00ffcc;
+  }
+
+  [data-theme="synthwave"] {
+    --bg-deep: #120424;
+    --bg-mid: #220840;
+    --bg-glow: #380d60;
+    --bg-card: rgba(34, 8, 64, 0.9);
+    --blob-a: #ff71ce;
+    --blob-b: #01cdfe;
+    --eye-white: #ffffff;
+    --pupil: #120424;
+    --text-primary: #fffb96;
+    --text-accent: #ff71ce;
+    --text-dim: rgba(255, 113, 206, 0.5);
+    --border-color: #ff71ce;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-active);
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  body {
+    position: relative;
+    background: radial-gradient(120% 90% at 50% 35%, var(--bg-glow) 0%, var(--bg-mid) 45%, var(--bg-deep) 100%);
+    touch-action: none;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Optional CRT Overlay */
+  #crtOverlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%);
+    background-size: 100% 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  #crtOverlay.enabled { opacity: 0.6; }
+
+  /* Ambient Stars */
+  #stars {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  #stars span {
+    position: absolute;
+    background: #ffffff;
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.75; }
+  }
+
+  /* Top Right Controls */
+  #topControls {
+    position: absolute;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    right: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 30;
+  }
+
+  .pixel-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--font-active);
+    font-size: 11px;
+    padding: 6px 12px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, background 0.2s ease;
+    outline: none;
+    backdrop-filter: blur(8px);
+  }
+  .pixel-btn:hover {
+    background: var(--text-accent);
+    color: var(--bg-deep);
+  }
+  .pixel-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px transparent;
+  }
+  .pixel-btn.icon-only {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    font-size: 14px;
+  }
+
+  /* Original Blob Creature */
+  #creatureWrap {
+    position: absolute;
+    width: calc(min(40vh, 40vw, 300px) * var(--creature-scale));
+    height: calc(min(40vh, 40vw, 300px) * var(--creature-scale));
+    left: 0;
+    top: 0;
+    cursor: grab;
+    touch-action: none;
+    will-change: transform;
+    z-index: 20;
+  }
+  #creatureWrap.dragging { cursor: grabbing; }
+  #creatureWrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+  #ball {
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    pointer-events: none;
+    opacity: 0;
+    left: 0;
+    top: 0;
+    will-change: transform;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+    z-index: 15;
+  }
+  #ball svg { width: 100%; height: 100%; overflow: visible; }
+
+  /* Greeting Container */
+  #greeting {
+    position: absolute;
+    top: 9vh;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+    padding: 0 24px;
+  }
+
+  #greeting .line1 {
+    font-family: var(--font-active);
+    font-size: calc(clamp(16px, 4.2vw, 42px) * var(--greet-scale));
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-primary);
+  }
+
+  #greeting .typed {
+    background: linear-gradient(180deg, #ffd9c2, var(--text-accent) 85%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 35px rgba(255, 138, 91, 0.3);
+  }
+
+  #greeting .cursor {
+    display: inline-block;
+    width: 0.5em;
+    height: 1.0em;
+    background: var(--text-accent);
+    margin-left: 4px;
+    animation: blink 0.9s step-end infinite;
+    vertical-align: -0.1em;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #greeting .line2 {
+    margin-top: 14px;
+    font-family: var(--font-active);
+    font-size: calc(clamp(10px, 1.6vw, 15px) * var(--greet-scale));
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* Particles */
+  #particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 25;
+  }
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    font-size: 20px;
+    line-height: 1;
+    opacity: 0.95;
+    animation: floatUp 1.1s ease-out forwards;
+  }
+  .particle.zzz {
+    font-family: var(--font-active);
+    font-size: 14px;
+    color: var(--text-dim);
+    animation: floatZzz 1.8s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { transform: translate(0,0) scale(0.6); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translate(var(--dx,0px), -70px) scale(1.1); opacity: 0; }
+  }
+  @keyframes floatZzz {
+    0% { transform: translate(0,0) scale(0.5); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translate(14px,-46px) scale(1); opacity: 0; }
+  }
+
+  #hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(4vh + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+    color: var(--hint);
+    font-family: var(--font-active);
+    font-size: clamp(9px, 1.2vw, 12px);
+    letter-spacing: 0.04em;
+    transition: opacity 1.2s ease;
+    pointer-events: none;
+    padding: 0 20px;
+    z-index: 10;
+  }
+
+  /* Settings Modal / Flexibility Drawer */
+  #modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #modalBackdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #settingsModal {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    box-shadow: 6px 6px 0px var(--border-color);
+    width: min(520px, 92vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    color: var(--text-primary);
+    font-family: var(--font-active);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+  }
+  #modalBackdrop.open #settingsModal {
+    transform: scale(1);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px dashed var(--border-color);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+  .modal-title {
+    font-size: 13px;
+    color: var(--text-accent);
+    letter-spacing: 0.05em;
+  }
+
+  .setting-group { margin-bottom: 20px; }
+  .setting-label {
+    font-size: 10px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    display: block;
+    letter-spacing: 0.04em;
+  }
+
+  .setting-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+
+  .option-btn {
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+    font-family: var(--font-active);
+    font-size: 10px;
+    padding: 8px 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+  .option-btn:hover { border-color: var(--text-accent); }
+  .option-btn.active {
+    background: var(--text-accent);
+    color: var(--bg-deep);
+    border-color: var(--text-accent);
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+  }
+
+  .setting-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--font-active);
+    font-size: 11px;
+    padding: 10px;
+    outline: none;
+  }
+
+  .range-slider {
+    width: 100%;
+    accent-color: var(--text-accent);
+    cursor: pointer;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+
+  #settingsModal::-webkit-scrollbar { width: 6px; }
+  #settingsModal::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+  #settingsModal::-webkit-scrollbar-thumb { background: var(--border-color); }
+</style>
+</head>
+<body>
+
+<div id="crtOverlay"></div>
+<div id="stars"></div>
+
+<!-- Top Controls -->
+<div id="topControls">
+  <button class="pixel-btn icon-only" id="sizeDown" title="Smaller Text">–</button>
+  <button class="pixel-btn icon-only" id="sizeUp" title="Bigger Text">+</button>
+  <button class="pixel-btn" id="openSettings" title="Customization Settings">⚙ FLEXIBILITY</button>
+</div>
+
+<!-- Greeting -->
+<div id="greeting">
+  <div class="line1"><span class="typed" id="greetingText"></span><span class="cursor"></span></div>
+  <div class="line2" id="greetingLine2">Tuesday, September 22</div>
+</div>
+
+<div id="particles"></div>
+
+<!-- Jelly Ball -->
+<div id="ball">
+  <svg viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="jellyGrad" cx="35%" cy="28%" r="75%">
+        <stop offset="0%" stop-color="#ffd9a0" stop-opacity="0.95"/>
+        <stop offset="45%" stop-color="#ff8a5b" stop-opacity="0.88"/>
+        <stop offset="100%" stop-color="#e2492f" stop-opacity="0.82"/>
+      </radialGradient>
+    </defs>
+    <g id="jellyGroup">
+      <ellipse cx="50" cy="50" rx="42" ry="42" fill="url(#jellyGrad)" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+      <ellipse cx="36" cy="32" rx="13" ry="8" fill="#ffffff" opacity="0.5"/>
+      <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    </g>
+  </svg>
+</div>
+
+<!-- Original Blob Creature -->
+<div id="creatureWrap">
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="blobGrad" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="var(--blob-a)"/>
+        <stop offset="100%" stop-color="var(--blob-b)"/>
+      </radialGradient>
+      <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="6"/>
+      </filter>
+    </defs>
+
+    <g id="squashGroup">
+      <ellipse id="shadow" cx="200" cy="330" rx="110" ry="18" fill="#000000" opacity="0.25" filter="url(#soft)"/>
+
+      <g id="bodyGroup">
+        <path id="blobBody" fill="url(#blobGrad)"/>
+
+        <g id="browL"><rect x="-22" y="-6" width="44" height="9" rx="4.5" fill="var(--pupil)" opacity="0.85"/></g>
+        <g id="browR"><rect x="-22" y="-6" width="44" height="9" rx="4.5" fill="var(--pupil)" opacity="0.85"/></g>
+
+        <g id="leftEyeGroup">
+          <ellipse id="leftSclera" cx="0" cy="0" rx="34" ry="40" fill="var(--eye-white)"/>
+          <circle id="leftPupil" cx="0" cy="0" r="15" fill="var(--pupil)"/>
+          <circle id="leftShine" cx="-5" cy="-6" r="4.5" fill="#ffffff"/>
+        </g>
+        <g id="rightEyeGroup">
+          <ellipse id="rightSclera" cx="0" cy="0" rx="34" ry="40" fill="var(--eye-white)"/>
+          <circle id="rightPupil" cx="0" cy="0" r="15" fill="var(--pupil)"/>
+          <circle id="rightShine" cx="-5" cy="-6" r="4.5" fill="#ffffff"/>
+        </g>
+
+        <path id="mouthSmile" fill="none" stroke="var(--pupil)" stroke-width="6" stroke-linecap="round"/>
+        <ellipse id="mouthO" cx="200" cy="262" rx="12" ry="14" fill="var(--pupil)" opacity="0"/>
+        <line id="mouthSleep" x1="185" y1="260" x2="215" y2="260" stroke="var(--pupil)" stroke-width="5" stroke-linecap="round" opacity="0"/>
+
+        <ellipse id="leftCheek" cx="128" cy="235" rx="22" ry="12" fill="#ffffff" opacity="0" filter="url(#soft)"/>
+        <ellipse id="rightCheek" cx="272" cy="235" rx="22" ry="12" fill="#ffffff" opacity="0" filter="url(#soft)"/>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div id="hint">move, click, or drag it — everything is flexible ⚙</div>
+
+<!-- Flexibility & Settings Modal -->
+<div id="modalBackdrop">
+  <div id="settingsModal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ FLEXIBILITY & SETTINGS</div>
+      <button class="pixel-btn icon-only" id="closeModal">✕</button>
+    </div>
+
+    <!-- Font Selector -->
+    <div class="setting-group">
+      <label class="setting-label">1. TEXT FONT TYPE</label>
+      <div class="setting-options" id="fontOptions">
+        <button class="option-btn active" data-font="'Press Start 2P', monospace">Press Start</button>
+        <button class="option-btn" data-font="'Silkscreen', monospace">Silkscreen</button>
+        <button class="option-btn" data-font="'Pixelify Sans', sans-serif">Pixelify</button>
+        <button class="option-btn" data-font="'VT323', monospace">VT323</button>
+        <button class="option-btn" data-font="'Fraunces', serif">Fraunces</button>
+      </div>
+    </div>
+
+    <!-- Color Palette -->
+    <div class="setting-group">
+      <label class="setting-label">2. COLOR PALETTE</label>
+      <div class="setting-options" id="themeOptions">
+        <button class="option-btn active" data-theme="default">Cosmic Glow</button>
+        <button class="option-btn" data-theme="terracotta">Terracotta</button>
+        <button class="option-btn" data-theme="gameboy">GameBoy</button>
+        <button class="option-btn" data-theme="cyberpunk">Cyberpunk</button>
+        <button class="option-btn" data-theme="synthwave">Synthwave</button>
+      </div>
+    </div>
+
+    <!-- Custom Greeting Name -->
+    <div class="setting-group">
+      <label class="setting-label">3. CUSTOM NAME / GREETING</label>
+      <input type="text" id="customNameInput" class="setting-input" value="Aayush" placeholder="Enter name...">
+    </div>
+
+    <!-- Text Scale Slider -->
+    <div class="setting-group">
+      <label class="setting-label" id="textScaleLabel">4. TEXT SCALE (1.0x)</label>
+      <input type="range" id="textScaleSlider" class="range-slider" min="0.6" max="2.0" step="0.05" value="1.0">
+    </div>
+
+    <!-- Creature Scale Slider -->
+    <div class="setting-group">
+      <label class="setting-label" id="creatureScaleLabel">5. CREATURE SCALE (1.0x)</label>
+      <input type="range" id="creatureScaleSlider" class="range-slider" min="0.6" max="1.8" step="0.05" value="1.0">
+    </div>
+
+    <!-- Audio & CRT Toggles -->
+    <div class="setting-group">
+      <label class="setting-label">6. RETRO EFFECTS & AUDIO</label>
+      <div class="toggle-row">
+        <span>CRT Scanlines Filter</span>
+        <button class="pixel-btn" id="toggleCrt">OFF</button>
+      </div>
+      <div class="toggle-row">
+        <span>8-Bit Sound FX</span>
+        <button class="pixel-btn" id="toggleAudio">OFF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------- Web Audio Synth ----------------
+  var soundEnabled = false;
+  var audioCtx = null;
+
+  function play8BitSound(type) {
+    if (!soundEnabled) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      var nowTime = audioCtx.currentTime;
+
+      if (type === 'jump') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(160, nowTime);
+        osc.frequency.exponentialRampToValueAtTime(640, nowTime + 0.15);
+        gain.gain.setValueAtTime(0.1, nowTime);
+        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.15);
+        osc.start(nowTime); osc.stop(nowTime + 0.15);
+      } else if (type === 'click') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(440, nowTime);
+        osc.frequency.setValueAtTime(880, nowTime + 0.05);
+        gain.gain.setValueAtTime(0.08, nowTime);
+        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.08);
+        osc.start(nowTime); osc.stop(nowTime + 0.08);
+      } else if (type === 'bounce') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, nowTime);
+        osc.frequency.exponentialRampToValueAtTime(140, nowTime + 0.12);
+        gain.gain.setValueAtTime(0.12, nowTime);
+        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.12);
+        osc.start(nowTime); osc.stop(nowTime + 0.12);
+      } else if (type === 'pet') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, nowTime);
+        osc.frequency.setValueAtTime(659.25, nowTime + 0.08);
+        osc.frequency.setValueAtTime(783.99, nowTime + 0.16);
+        gain.gain.setValueAtTime(0.1, nowTime);
+        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.26);
+        osc.start(nowTime); osc.stop(nowTime + 0.26);
+      }
+    } catch (e) {}
+  }
+
+  // ---------------- Stars ----------------
+  var starsEl = document.getElementById('stars');
+  var starCount = window.innerWidth < 600 ? 36 : 80;
+  for (var i = 0; i < starCount; i++) {
+    var s = document.createElement('span');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.top = (Math.random() * 70) + '%';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    var size = (Math.random() * 1.6 + 0.6);
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    starsEl.appendChild(s);
+  }
+
+  // ---------------- Element Refs ----------------
+  var wrap = document.getElementById('creatureWrap');
+  var squashGroup = document.getElementById('squashGroup');
+  var blobBody = document.getElementById('blobBody');
+  var shadow = document.getElementById('shadow');
+  var browL = document.getElementById('browL');
+  var browR = document.getElementById('browR');
+  var leftEyeGroup = document.getElementById('leftEyeGroup');
+  var rightEyeGroup = document.getElementById('rightEyeGroup');
+  var leftPupil = document.getElementById('leftPupil');
+  var rightPupil = document.getElementById('rightPupil');
+  var leftShine = document.getElementById('leftShine');
+  var rightShine = document.getElementById('rightShine');
+  var mouthSmile = document.getElementById('mouthSmile');
+  var mouthO = document.getElementById('mouthO');
+  var mouthSleep = document.getElementById('mouthSleep');
+  var leftCheek = document.getElementById('leftCheek');
+  var rightCheek = document.getElementById('rightCheek');
+  var ballEl = document.getElementById('ball');
+  var jellyGroup = document.getElementById('jellyGroup');
+  var particlesEl = document.getElementById('particles');
+  var greetingText = document.getElementById('greetingText');
+  var greetingLine2 = document.getElementById('greetingLine2');
+  var crtOverlay = document.getElementById('crtOverlay');
+  var modalBackdrop = document.getElementById('modalBackdrop');
+
+  var currentName = 'Aayush';
+  var currentGreetString = '';
+  var typeLoopTimer = null;
+
+  var TYPE_SPEED = 55, DELETE_SPEED = 32, HOLD_AFTER_TYPE = 1900, HOLD_AFTER_DELETE = 500;
+
+  function startTypeLoop(el, text) {
+    if (typeLoopTimer) clearTimeout(typeLoopTimer);
+    var i = 0, deleting = false;
+    function step() {
+      if (!deleting) {
+        i++;
+        el.textContent = text.slice(0, i);
+        if (i >= text.length) { deleting = true; typeLoopTimer = setTimeout(step, HOLD_AFTER_TYPE); return; }
+        typeLoopTimer = setTimeout(step, TYPE_SPEED);
+      } else {
+        i--;
+        el.textContent = text.slice(0, i);
+        if (i <= 0) { deleting = false; typeLoopTimer = setTimeout(step, HOLD_AFTER_DELETE); return; }
+        typeLoopTimer = setTimeout(step, DELETE_SPEED);
+      }
+    }
+    step();
+  }
+
+  function updateGreeting() {
+    var d = new Date();
+    var h = d.getHours();
+    var greet = h < 5 ? 'Good night, ' + currentName
+      : h < 12 ? 'Good morning, ' + currentName
+      : h < 17 ? 'Good afternoon, ' + currentName
+      : h < 21 ? 'Good evening, ' + currentName
+      : 'Good night, ' + currentName;
+    if (greet !== currentGreetString) {
+      currentGreetString = greet;
+      startTypeLoop(greetingText, greet);
+    }
+    greetingLine2.textContent = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  updateGreeting();
+  setInterval(updateGreeting, 60000);
+
+  // ---------------- Flexibility & Settings System ----------------
+  var textScale = 1.0;
+  var creatureScale = 1.0;
+
+  try {
+    var savedFont = localStorage.getItem('pixelFont');
+    if (savedFont) setFont(savedFont);
+    var savedTheme = localStorage.getItem('pixelTheme');
+    if (savedTheme) setTheme(savedTheme);
+    var savedName = localStorage.getItem('pixelName');
+    if (savedName) { currentName = savedName; document.getElementById('customNameInput').value = savedName; updateGreeting(); }
+    var savedTScale = localStorage.getItem('pixelTScale');
+    if (savedTScale) setTextScale(parseFloat(savedTScale));
+    var savedCScale = localStorage.getItem('pixelCScale');
+    if (savedCScale) setCreatureScale(parseFloat(savedCScale));
+  } catch (e) {}
+
+  function setFont(font) {
+    document.documentElement.style.setProperty('--font-active', font);
+    document.querySelectorAll('#fontOptions .option-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-font') === font);
+    });
+    try { localStorage.setItem('pixelFont', font); } catch (e) {}
+  }
+
+  function setTheme(theme) {
+    if (theme === 'default') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('#themeOptions .option-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
+    });
+    try { localStorage.setItem('pixelTheme', theme); } catch (e) {}
+  }
+
+  function setTextScale(scale) {
+    textScale = Math.max(0.5, Math.min(2.2, scale));
+    document.documentElement.style.setProperty('--greet-scale', textScale);
+    document.getElementById('textScaleSlider').value = textScale;
+    document.getElementById('textScaleLabel').textContent = '4. TEXT SCALE (' + textScale.toFixed(2) + 'x)';
+    try { localStorage.setItem('pixelTScale', textScale); } catch (e) {}
+  }
+
+  function setCreatureScale(scale) {
+    creatureScale = Math.max(0.5, Math.min(2.0, scale));
+    document.documentElement.style.setProperty('--creature-scale', creatureScale);
+    document.getElementById('creatureScaleSlider').value = creatureScale;
+    document.getElementById('creatureScaleLabel').textContent = '5. CREATURE SCALE (' + creatureScale.toFixed(2) + 'x)';
+    try { localStorage.setItem('pixelCScale', creatureScale); } catch (e) {}
+    recalc();
+  }
+
+  document.getElementById('sizeUp').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale + 0.1); });
+  document.getElementById('sizeDown').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale - 0.1); });
+
+  document.getElementById('openSettings').addEventListener('click', function () { play8BitSound('click'); modalBackdrop.classList.add('open'); });
+  document.getElementById('closeModal').addEventListener('click', function () { play8BitSound('click'); modalBackdrop.classList.remove('open'); });
+  modalBackdrop.addEventListener('click', function (e) { if (e.target === modalBackdrop) { play8BitSound('click'); modalBackdrop.classList.remove('open'); } });
+
+  document.getElementById('fontOptions').addEventListener('click', function (e) {
+    if (e.target.classList.contains('option-btn')) { play8BitSound('click'); setFont(e.target.getAttribute('data-font')); }
+  });
+
+  document.getElementById('themeOptions').addEventListener('click', function (e) {
+    if (e.target.classList.contains('option-btn')) { play8BitSound('click'); setTheme(e.target.getAttribute('data-theme')); }
+  });
+
+  document.getElementById('customNameInput').addEventListener('input', function (e) {
+    currentName = e.target.value.trim() || 'Aayush';
+    currentGreetString = '';
+    updateGreeting();
+    try { localStorage.setItem('pixelName', currentName); } catch (e) {}
+  });
+
+  document.getElementById('textScaleSlider').addEventListener('input', function (e) { setTextScale(parseFloat(e.target.value)); });
+  document.getElementById('creatureScaleSlider').addEventListener('input', function (e) { setCreatureScale(parseFloat(e.target.value)); });
+
+  document.getElementById('toggleCrt').addEventListener('click', function (e) {
+    play8BitSound('click');
+    crtOverlay.classList.toggle('enabled');
+    e.target.textContent = crtOverlay.classList.contains('enabled') ? 'ON' : 'OFF';
+  });
+
+  document.getElementById('toggleAudio').addEventListener('click', function (e) {
+    soundEnabled = !soundEnabled;
+    e.target.textContent = soundEnabled ? 'ON' : 'OFF';
+    if (soundEnabled) play8BitSound('click');
+  });
+
+  // ---------------- Blob Creature Physics & Motion ----------------
+  var EYE_L = { x: 155, y: 190 };
+  var EYE_R = { x: 245, y: 190 };
+  var PUPIL_RANGE = 11;
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function now() { return performance.now(); }
+
+  function spawnParticle(emoji, x, y, dx) {
+    var p = document.createElement('div');
+    p.className = 'particle' + (emoji === 'zzz' ? ' zzz' : '');
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.setProperty('--dx', (dx || 0) + 'px');
+    p.textContent = emoji === 'zzz' ? 'z' : emoji;
+    particlesEl.appendChild(p);
+    p.addEventListener('animationend', function () { p.remove(); });
+  }
+
+  function burstHearts(cx, cy) {
+    for (var i = 0; i < 5; i++) {
+      (function (i) {
+        setTimeout(function () { spawnParticle('💗', cx + (Math.random() * 50 - 25), cy - 20, (Math.random() * 40 - 20)); }, i * 90);
+      })(i);
+    }
+  }
+
+  function burstSparkles(cx, cy) {
+    for (var i = 0; i < 3; i++) {
+      (function (i) {
+        setTimeout(function () { spawnParticle('✨', cx + (Math.random() * 60 - 30), cy - 10, (Math.random() * 50 - 25)); }, i * 70);
+      })(i);
+    }
+  }
+
+  var win = { w: window.innerWidth, h: window.innerHeight };
+  var half = 150;
+  function recalc() {
+    win.w = window.innerWidth;
+    win.h = window.innerHeight;
+    var r = wrap.getBoundingClientRect();
+    half = (r.width || 300) / 2;
+    floorY = win.h * 0.78;
+  }
+  var floorY = win.h * 0.78;
+
+  var creature = { x: win.w / 2, y: floorY, targetX: win.w / 2, walking: false };
+  var cursor = { x: win.w / 2, y: win.h * 0.3, lastX: win.w / 2, lastY: win.h * 0.3, speed: 0, lastMoveTime: now() };
+  var lastActivity = now();
+  var suppressNextClick = false;
+
+  var jumpOffset = 0, jumpVel = 0;
+  var GRAVITY = 2600;
+  var onGround = true;
+
+  function triggerJump(power) {
+    if (!onGround) return;
+    jumpVel = -(power || 620);
+    onGround = false;
+    play8BitSound('jump');
+  }
+
+  var squashX = 1, squashY = 1, targetSquashX = 1, targetSquashY = 1;
+  var spinAngle = 0;
+
+  var mode = 'idle';
+  var modeUntil = 0;
+  var selfPlayCooldownUntil = now() + 4000;
+
+  var expr = { browY: 0, browAngle: 0, mouthWidth: 26, mouthCurve: 14, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 };
+  var exprCur = { browY: 0, browAngle: 0, mouthWidth: 26, mouthCurve: 14, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 };
+
+  var MOODS = {
+    idle:     { browY: 0,   browAngle: 4,   mouthWidth: 24, mouthCurve: 12, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 },
+    curious:  { browY: -4,  browAngle: 12,  mouthWidth: 22, mouthCurve: 8,  smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 },
+    happy:    { browY: -3,  browAngle: 6,   mouthWidth: 46, mouthCurve: 34, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.9 },
+    chase:    { browY: -5,  browAngle: 10,  mouthWidth: 40, mouthCurve: 26, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.4 },
+    startled: { browY: -10, browAngle: -4,  mouthWidth: 12, mouthCurve: 4,  smileOp: 0, oOp: 1, sleepOp: 0, blush: 0 },
+    sleep:    { browY: 4,   browAngle: 2,   mouthWidth: 20, mouthCurve: 6,  smileOp: 0, oOp: 0, sleepOp: 1, blush: 0.15 },
+    dizzy:    { browY: -2,  browAngle: 16,  mouthWidth: 36, mouthCurve: 24, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.5 },
+    drag:     { browY: -6,  browAngle: -10, mouthWidth: 16, mouthCurve: 4,  smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.2 }
+  };
+
+  var startledUntil = 0;
+
+  function setMoodTarget(name) {
+    var m = MOODS[name] || MOODS.idle;
+    expr.browY = m.browY; expr.browAngle = m.browAngle;
+    expr.mouthWidth = m.mouthWidth; expr.mouthCurve = m.mouthCurve;
+    expr.smileOp = m.smileOp; expr.oOp = m.oOp; expr.sleepOp = m.sleepOp;
+    expr.blush = m.blush;
+  }
+
+  // Ball
+  var ball = { active: false, x: 0, y: 0, vx: 0, vy: 0, r: 21, hits: 0, wobble: 0, wobbleVel: 0, wobbleAxis: 'v' };
+  var BALL_GRAVITY = 1500;
+  var WOBBLE_SPRING = 140, WOBBLE_DAMPING = 0.90;
+
+  function kickJelly(strength, axis) { ball.wobbleAxis = axis; ball.wobbleVel += strength; }
+
+  function spawnBall(x, y) {
+    ball.active = true;
+    ball.x = x; ball.y = y;
+    ball.vx = (Math.random() * 120 - 60);
+    ball.vy = -200;
+    ball.hits = 0;
+    ball.wobble = 0; ball.wobbleVel = 0;
+    ballEl.style.opacity = '1';
+    play8BitSound('bounce');
+  }
+
+  function despawnBall() { ball.active = false; ballEl.style.opacity = '0'; }
+
+  function updateBall(dt, timeNow) {
+    if (!ball.active) return;
+    ball.vy += BALL_GRAVITY * dt;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    var groundY = floorY + half * 0.35;
+    if (ball.y > groundY) {
+      ball.y = groundY;
+      var impact = Math.abs(ball.vy);
+      ball.vy *= -0.52;
+      ball.vx *= 0.8;
+      if (Math.abs(ball.vy) < 40) ball.vy = 0;
+      kickJelly(clamp(impact / 260, 0.3, 1.6), 'v');
+      play8BitSound('bounce');
+    }
+    if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.6; kickJelly(clamp(Math.abs(ball.vx) / 220, 0.25, 1.3), 'h'); play8BitSound('bounce'); }
+    if (ball.x > win.w - ball.r) { ball.x = win.w - ball.r; ball.vx *= -0.6; kickJelly(clamp(Math.abs(ball.vx) / 220, 0.25, 1.3), 'h'); play8BitSound('bounce'); }
+
+    ball.wobbleVel += -WOBBLE_SPRING * ball.wobble * dt;
+    ball.wobble += ball.wobbleVel * dt;
+    ball.wobbleVel *= Math.pow(WOBBLE_DAMPING, dt * 60);
+
+    var amt = clamp(ball.wobble, -0.9, 0.9) + Math.sin(timeNow / 240) * 0.035;
+    var sx, sy;
+    if (ball.wobbleAxis === 'v') { sx = 1 + amt * 0.5; sy = 1 - amt * 0.5; }
+    else { sx = 1 - amt * 0.5; sy = 1 + amt * 0.5; }
+
+    ballEl.style.transform = 'translate(' + (ball.x - ball.r) + 'px,' + (ball.y - ball.r) + 'px)';
+    jellyGroup.setAttribute('transform', 'translate(50,50) scale(' + sx + ',' + sy + ') translate(-50,-50)');
+  }
+
+  var SELF_PLAY_DELAY = 5500;
+  var SLEEP_DELAY = 19000;
+  var nextIdleWanderAt = now() + 3000 + Math.random() * 3000;
+
+  function wakeUp() {
+    if (mode === 'sleep') {
+      startledUntil = now() + 260;
+      triggerJump(420);
+      burstSparkles(creature.x, creature.y - half * 0.6);
+    }
+    mode = 'idle';
+    despawnBall();
+  }
+
+  function registerActivity() {
+    lastActivity = now();
+    if (mode === 'sleep' || mode === 'tailspin' || (mode === 'chase')) {
+      wakeUp();
+    }
+  }
+
+  function maybeStartSelfPlay() {
+    if (now() < selfPlayCooldownUntil) return;
+    if (Math.random() < 0.5) {
+      mode = 'tailspin';
+      modeUntil = now() + 1800 + Math.random() * 900;
+      spinAngle = 0;
+    } else {
+      mode = 'chase';
+      spawnBall(creature.x + (Math.random() * 160 - 80), floorY - 260);
+    }
+  }
+
+  window.addEventListener('mousemove', function (e) {
+    var dx = e.clientX - cursor.lastX, dy = e.clientY - cursor.lastY;
+    var dt = Math.max(1, now() - cursor.lastMoveTime);
+    cursor.speed = Math.sqrt(dx * dx + dy * dy) / dt * 1000;
+    cursor.x = e.clientX; cursor.y = e.clientY;
+    cursor.lastX = e.clientX; cursor.lastY = e.clientY;
+    cursor.lastMoveTime = now();
+
+    if (Math.abs(dx) + Math.abs(dy) > 4) registerActivity();
+
+    var dist = Math.hypot(e.clientX - creature.x, e.clientY - (creature.y - half * 0.3));
+    if (cursor.speed > 1400 && dist < 220 && mode !== 'sleep') {
+      startledUntil = now() + 380;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches[0]) {
+      cursor.x = e.touches[0].clientX;
+      cursor.y = e.touches[0].clientY;
+      registerActivity();
+    }
+  }, { passive: true });
+
+  var dragging = false, dragMoved = false, dragStartX = 0, dragStartY = 0;
+  var dragVX = 0, dragVY = 0, dragPrevX = 0, dragPrevY = 0, dragPrevT = 0;
+
+  wrap.addEventListener('pointerdown', function (e) {
+    dragging = true; dragMoved = false;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    dragPrevX = e.clientX; dragPrevY = e.clientY; dragPrevT = now();
+    wrap.setPointerCapture(e.pointerId);
+    wrap.classList.add('dragging');
+    registerActivity();
+    despawnBall();
+    mode = 'drag';
+    onGround = false; jumpVel = 0; jumpOffset = 0;
+  });
+
+  window.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var d = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
+    if (d > 6) dragMoved = true;
+    creature.x = e.clientX;
+    creature.y = e.clientY;
+    var t = now();
+    var dt = Math.max(1, t - dragPrevT);
+    dragVX = (e.clientX - dragPrevX) / dt * 16;
+    dragVY = (e.clientY - dragPrevY) / dt * 16;
+    dragPrevX = e.clientX; dragPrevY = e.clientY; dragPrevT = t;
+  });
+
+  window.addEventListener('pointerup', function (e) {
+    if (!dragging) return;
+    dragging = false;
+    wrap.classList.remove('dragging');
+    if (!dragMoved) {
+      mode = 'happy';
+      modeUntil = now() + 1100;
+      triggerJump(360);
+      burstHearts(creature.x, creature.y - half * 0.6);
+      play8BitSound('pet');
+      creature.y = floorY;
+      onGround = true;
+    } else {
+      jumpVel = clamp(dragVY * 6, -900, 900);
+      onGround = false;
+      creature.targetX = clamp(creature.x + dragVX * 4, half, win.w - half);
+      mode = 'idle';
+      suppressNextClick = true;
+    }
+  });
+
+  window.addEventListener('click', function (e) {
+    if (suppressNextClick) { suppressNextClick = false; return; }
+    if (wrap.contains(e.target) || e.target.closest('#topControls') || e.target.closest('#modalBackdrop')) return;
+    registerActivity();
+    mode = 'chase';
+    spawnBall(e.clientX, Math.min(e.clientY, floorY - 40));
+  });
+
+  window.addEventListener('dblclick', function (e) {
+    if (e.target.closest('#topControls') || e.target.closest('#modalBackdrop')) return;
+    registerActivity();
+    startledUntil = now() + 420;
+    triggerJump(760);
+    despawnBall();
+    mode = 'idle';
+  });
+
+  window.addEventListener('resize', recalc);
+  recalc();
+
+  var lastT = now();
+
+  function frame(t) {
+    var dt = Math.min(0.05, (t - lastT) / 1000);
+    lastT = t;
+    var timeNow = t;
+
+    var idleTime = timeNow - lastActivity;
+    if (mode === 'idle' && idleTime > SELF_PLAY_DELAY) {
+      maybeStartSelfPlay();
+      selfPlayCooldownUntil = timeNow + 6000;
+    }
+    if (mode !== 'sleep' && mode !== 'drag' && idleTime > SLEEP_DELAY) {
+      mode = 'sleep';
+      despawnBall();
+    }
+    if (mode === 'tailspin' && timeNow > modeUntil) { mode = 'idle'; }
+    if (mode === 'happy' && timeNow > modeUntil) { mode = 'idle'; }
+
+    if (mode === 'drag') {
+    } else if (mode === 'chase' && ball.active) {
+      creature.targetX = clamp(ball.x, half, win.w - half);
+    } else if (mode === 'tailspin') {
+      creature.targetX = creature.x;
+    } else if (mode === 'idle') {
+      if (timeNow > nextIdleWanderAt) {
+        creature.targetX = clamp(creature.x + (Math.random() * 260 - 130), half, win.w - half);
+        nextIdleWanderAt = timeNow + 5000 + Math.random() * 6000;
+      }
+    } else if (mode === 'sleep') {
+      creature.targetX = creature.x;
+    }
+
+    if (mode !== 'drag') {
+      var dxWalk = creature.targetX - creature.x;
+      creature.walking = Math.abs(dxWalk) > 2;
+      creature.x += dxWalk * clamp(dt * 3, 0, 1);
+      creature.y = floorY;
+    }
+    creature.x = clamp(creature.x, half, win.w - half);
+
+    if (!onGround) {
+      jumpVel += GRAVITY * dt;
+      jumpOffset += jumpVel * dt;
+      if (jumpOffset >= 0 && mode !== 'drag') {
+        jumpOffset = 0; jumpVel = 0; onGround = true;
+        targetSquashX = 1.18; targetSquashY = 0.82;
+      }
+    }
+    if (mode === 'idle' && onGround && Math.random() < 0.0032) {
+      triggerJump(480 + Math.random() * 160);
+    }
+    if (mode === 'chase' && ball.active && onGround) {
+      var d2ball = Math.hypot(ball.x - creature.x, ball.y - (creature.y - half * 0.5));
+      if (d2ball < 70 && ball.y > floorY - half * 0.9) {
+        triggerJump(520);
+        ball.vy = -(520 + Math.random() * 200);
+        ball.vx = clamp(ball.vx + (Math.random() * 200 - 100), -260, 260);
+        ball.hits++;
+        kickJelly(1.3, 'v');
+        burstSparkles(ball.x, ball.y);
+        if (ball.hits > 5) { despawnBall(); mode = 'idle'; }
+      }
+    }
+
+    if (!onGround) {
+      targetSquashX = 0.9; targetSquashY = 1.14;
+    } else if (mode !== 'happy') {
+      targetSquashX = lerp(targetSquashX, 1, 0.12);
+      targetSquashY = lerp(targetSquashY, 1, 0.12);
+    }
+    squashX = lerp(squashX, targetSquashX, 0.25);
+    squashY = lerp(squashY, targetSquashY, 0.25);
+    targetSquashX = lerp(targetSquashX, 1, 0.06);
+    targetSquashY = lerp(targetSquashY, 1, 0.06);
+
+    var breathe = (onGround && mode !== 'sleep') ? Math.sin(timeNow / 620) * 0.015 : 0;
+    var breatheSleep = (mode === 'sleep') ? Math.sin(timeNow / 900) * 0.02 : 0;
+    var walkBob = creature.walking && onGround ? Math.abs(Math.sin(timeNow / 90)) * 6 : 0;
+
+    if (mode === 'tailspin') {
+      spinAngle += dt * 900;
+      if (Math.floor(spinAngle / 360) !== Math.floor((spinAngle - dt * 900) / 360)) {
+        burstSparkles(creature.x, creature.y - half * 0.7);
+      }
+    } else {
+      spinAngle = lerp(spinAngle % 360, 0, 0.1);
+    }
+
+    var startled = timeNow < startledUntil;
+    if (startled) { setMoodTarget('startled'); }
+    else if (mode === 'sleep') { setMoodTarget('sleep'); }
+    else if (mode === 'happy') { setMoodTarget('happy'); }
+    else if (mode === 'chase') { setMoodTarget('chase'); }
+    else if (mode === 'tailspin') { setMoodTarget('dizzy'); }
+    else if (mode === 'drag') { setMoodTarget('drag'); }
+    else {
+      var sinceMove = timeNow - cursor.lastMoveTime;
+      setMoodTarget(sinceMove < 900 ? 'curious' : 'idle');
+    }
+
+    var lookX, lookY;
+    var eyeOriginX = creature.x;
+    var eyeOriginY = creature.y - half * 0.55 + jumpOffset;
+    if (mode === 'chase' && ball.active) {
+      var bdx = ball.x - eyeOriginX, bdy = ball.y - eyeOriginY;
+      var bdist = Math.hypot(bdx, bdy);
+      var bang = Math.atan2(bdy, bdx);
+      var br = Math.min(PUPIL_RANGE, PUPIL_RANGE * (bdist / 140));
+      lookX = Math.cos(bang) * br; lookY = Math.sin(bang) * br * 0.85;
+    } else if (mode === 'tailspin' || mode === 'sleep' || mode === 'drag') {
+      lookX = 0; lookY = 2;
+    } else {
+      var cdx = cursor.x - eyeOriginX, cdy = cursor.y - eyeOriginY;
+      var cdist = Math.hypot(cdx, cdy);
+      var cang = Math.atan2(cdy, cdx);
+      var cr = Math.min(PUPIL_RANGE, PUPIL_RANGE * (cdist / 200));
+      lookX = Math.cos(cang) * cr; lookY = Math.sin(cang) * cr * 0.85;
+    }
+
+    lpx = lerp(lpx, lookX, 0.18);
+    lpy = lerp(lpy, lookY, 0.18);
+    rpx = lerp(rpx, lookX, 0.18);
+    rpy = lerp(rpy, lookY, 0.18);
+
+    if (mode !== 'sleep') {
+      if (!blinking && timeNow > nextBlinkAt) { blinking = true; blinkStart = timeNow; }
+      if (blinking) {
+        var bp = (timeNow - blinkStart) / BLINK_DUR;
+        if (bp < 1) { blinkT = Math.sin(bp * Math.PI); }
+        else { blinkT = 0; blinking = false; nextBlinkAt = timeNow + 2200 + Math.random() * 3200; }
+      }
+    } else {
+      blinkT = lerp(blinkT, 0.92, 0.15);
+    }
+
+    var scleraScaleY = startled ? Math.max(0.06, (1 - blinkT)) * 1.18 : Math.max(0.06, 1 - blinkT);
+    scleraScaleY = clamp(scleraScaleY, 0.06, 1.25);
+
+    exprCur.browY = lerp(exprCur.browY, expr.browY, 0.12);
+    exprCur.browAngle = lerp(exprCur.browAngle, expr.browAngle, 0.12);
+    exprCur.mouthWidth = lerp(exprCur.mouthWidth, expr.mouthWidth, 0.14);
+    exprCur.mouthCurve = lerp(exprCur.mouthCurve, expr.mouthCurve, 0.14);
+    exprCur.smileOp = lerp(exprCur.smileOp, expr.smileOp, 0.15);
+    exprCur.oOp = lerp(exprCur.oOp, expr.oOp, 0.2);
+    exprCur.sleepOp = lerp(exprCur.sleepOp, expr.sleepOp, 0.12);
+    exprCur.blush = lerp(exprCur.blush, expr.blush, 0.1);
+
+    var bodySquishX = 1 + breathe + breatheSleep;
+    var bodySquishY = 1 - breathe - breatheSleep * 0.6;
+    var w = 130 * bodySquishX, h = 120 * bodySquishY;
+    var cx = 200, cy = 215;
+    var top = cy - h, bottom = cy + h * 1.05, left = cx - w, right = cx + w;
+    blobBody.setAttribute('d',
+      'M ' + cx + ' ' + top +
+      ' C ' + (cx + w * 0.72) + ' ' + top + ' ' + right + ' ' + (cy - h * 0.35) + ' ' + right + ' ' + (cy + h * 0.15) +
+      ' C ' + right + ' ' + (bottom - h * 0.15) + ' ' + (cx + w * 0.55) + ' ' + bottom + ' ' + cx + ' ' + bottom +
+      ' C ' + (cx - w * 0.55) + ' ' + bottom + ' ' + left + ' ' + (bottom - h * 0.15) + ' ' + left + ' ' + (cy + h * 0.15) +
+      ' C ' + left + ' ' + (cy - h * 0.35) + ' ' + (cx - w * 0.72) + ' ' + top + ' ' + cx + ' ' + top + ' Z'
+    );
+
+    leftEyeGroup.setAttribute('transform', 'translate(' + EYE_L.x + ',' + EYE_L.y + ') scale(1,' + scleraScaleY + ')');
+    rightEyeGroup.setAttribute('transform', 'translate(' + EYE_R.x + ',' + EYE_R.y + ') scale(1,' + scleraScaleY + ')');
+    leftPupil.setAttribute('cx', lpx); leftPupil.setAttribute('cy', lpy);
+    rightPupil.setAttribute('cx', rpx); rightPupil.setAttribute('cy', rpy);
+    leftShine.setAttribute('cx', lpx - 5); leftShine.setAttribute('cy', lpy - 6);
+    rightShine.setAttribute('cx', rpx - 5); rightShine.setAttribute('cy', rpy - 6);
+    var pupilVisible = scleraScaleY > 0.22 ? 1 : 0;
+    leftPupil.style.opacity = rightPupil.style.opacity = leftShine.style.opacity = rightShine.style.opacity = pupilVisible;
+
+    browL.setAttribute('transform', 'translate(' + EYE_L.x + ',' + (EYE_L.y - 46 + exprCur.browY) + ') rotate(' + (-exprCur.browAngle) + ')');
+    browR.setAttribute('transform', 'translate(' + EYE_R.x + ',' + (EYE_R.y - 46 + exprCur.browY) + ') rotate(' + (exprCur.browAngle) + ')');
+
+    var my = 258;
+    mouthSmile.setAttribute('d', 'M ' + (200 - exprCur.mouthWidth) + ' ' + my + ' Q 200 ' + (my + exprCur.mouthCurve) + ' ' + (200 + exprCur.mouthWidth) + ' ' + my);
+    mouthSmile.style.opacity = exprCur.smileOp;
+    mouthO.style.opacity = exprCur.oOp;
+    mouthSleep.style.opacity = exprCur.sleepOp;
+
+    leftCheek.style.opacity = exprCur.blush * 0.7;
+    rightCheek.style.opacity = exprCur.blush * 0.7;
+
+    if (mode === 'sleep' && Math.random() < 0.01) {
+      spawnParticle('zzz', creature.x + half * 0.5, creature.y - half * 1.1, 10);
+    }
+
+    var totalY = jumpOffset + walkBob * -1;
+    wrap.style.left = (creature.x - half) + 'px';
+    wrap.style.top = (creature.y - half + totalY) + 'px';
+    squashGroup.setAttribute('transform',
+      'translate(200,300) scale(' + squashX + ',' + squashY + ') rotate(' + spinAngle + ') translate(-200,-300)'
+    );
+
+    var airAmount = clamp(-jumpOffset / 140, 0, 1);
+    shadow.setAttribute('opacity', 0.25 * (1 - airAmount * 0.8));
+    shadow.setAttribute('rx', 110 * (1 - airAmount * 0.3));
+
+    updateBall(dt, timeNow);
+
+    requestAnimationFrame(frame);
+  }
+
+  var lpx = 0, lpy = 0, rpx = 0, rpy = 0;
+  var blinkT = 0, blinking = false, blinkStart = 0, nextBlinkAt = now() + 1500 + Math.random() * 2500;
+  var BLINK_DUR = 160;
+
+  requestAnimationFrame(frame);
+
+  setTimeout(function () {
+    var hEl = document.getElementById('hint');
+    if (hEl) hEl.style.opacity = '0';
+  }, 7000);
+})();
+</script>
+</body>
+</html>
