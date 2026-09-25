@@ -3,1350 +3,828 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Interactive Blob Wallpaper</title>
+<title>Drift — Interactive Wallpaper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Pixelify+Sans:wght@400;600;700&family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg-deep: #0a0713;
-    --bg-mid: #150f28;
-    --bg-glow: #1f1638;
-    --bg-card: rgba(21, 15, 40, 0.88);
-    
-    --blob-a: #ff9d7a;
-    --blob-b: #ff5f8f;
-    --eye-white: #fdf9f4;
-    --pupil: #1c1420;
-    --hint: rgba(253, 249, 244, 0.4);
-    
-    --text-primary: #fdf9f4;
-    --text-accent: #ff8a5b;
-    --text-dim: rgba(253, 249, 244, 0.45);
-    --border-color: rgba(255, 138, 91, 0.35);
+  :root{
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Manrope, sans-serif;
+    --sky-a:#eaf5ff; --sky-b:#cfe9ff; --sun:#fff6d8; --ink:#22303f; --ink-soft:rgba(34,48,63,.55);
+    --glass:rgba(255,255,255,.55); --glass-border:rgba(255,255,255,.7); --shadow:rgba(30,40,60,.14);
+    --creature-scale:1; --cloud-opacity:1;
+    --title-font-size:clamp(24px,4.4vmin,46px);
+    --sub-font-size:clamp(12px,1.6vmin,16px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;overflow:hidden;font-family:var(--font);user-select:none;-webkit-user-select:none;}
+  body{position:relative;color:var(--ink);}
 
-    --font-active: 'Press Start 2P', monospace;
-    --greet-scale: 1;
-    --creature-scale: 1;
-  }
+  /* ---------- SKY LAYERS ---------- */
+  .sky{position:fixed;inset:0;opacity:0;transition:opacity 2.2s ease;z-index:0;}
+  .sky.active{opacity:1;}
+  #sky-morning{background:linear-gradient(180deg,#eaf6ff 0%,#dcefff 45%,#cfe9ff 100%);}
+  #sky-afternoon{background:linear-gradient(180deg,#8fd0ff 0%,#bfe4ff 55%,#eaf7ff 100%);}
+  #sky-evening{background:
+    linear-gradient(180deg,
+      #221238 0%,
+      #3a1c4e 14%,
+      #6c2c5e 30%,
+      #a83a5c 45%,
+      #d94f52 58%,
+      #f07a45 70%,
+      #f9a552 82%,
+      #ffcf7a 92%,
+      #ffe6a6 100%);}
+  #sky-evening::before{content:"";position:absolute;inset:0;
+    background:
+      linear-gradient(15deg, rgba(255,180,120,.18) 0%, rgba(255,180,120,0) 35%),
+      linear-gradient(-10deg, rgba(255,120,150,.14) 10%, rgba(255,120,150,0) 45%);
+    mix-blend-mode:screen;}
+  #sky-night{background:linear-gradient(180deg,#050a1c 0%,#0b1230 45%,#131a3a 100%);}
 
-  [data-theme="terracotta"] {
-    --bg-deep: #080608;
-    --bg-mid: #140d11;
-    --bg-glow: #24141a;
-    --bg-card: rgba(20, 13, 17, 0.9);
-    --blob-a: #d56e4c;
-    --blob-b: #e8734a;
-    --text-primary: #f2e3d5;
-    --text-accent: #d56e4c;
-    --border-color: rgba(213, 110, 76, 0.4);
-  }
+  .sun-glow{position:absolute;left:50%;top:22%;width:46vmin;height:46vmin;border-radius:50%;
+    transform:translate(-50%,-50%);filter:blur(2px);}
+  #sky-morning .sun-glow{background:radial-gradient(circle,#fff9e2 0%,rgba(255,249,226,0) 70%);top:18%;}
+  #sky-afternoon .sun-glow{background:radial-gradient(circle,#fffef2 0%,rgba(255,254,242,0) 70%);top:14%;}
+  #sky-evening .sun-glow{display:none;}
+  #sky-night .sun-glow{display:none;}
 
-  [data-theme="gameboy"] {
-    --bg-deep: #0f380f;
-    --bg-mid: #184818;
-    --bg-glow: #245824;
-    --bg-card: rgba(15, 56, 15, 0.92);
-    --blob-a: #8bac0f;
-    --blob-b: #9bbc0f;
-    --eye-white: #e0f0c0;
-    --pupil: #0f380f;
-    --text-primary: #9bbc0f;
-    --text-accent: #8bac0f;
-    --text-dim: rgba(155, 188, 15, 0.5);
-    --border-color: #8bac0f;
-  }
+  .stars{position:absolute;inset:0;opacity:0;transition:opacity 2s ease;}
+  #sky-night .stars{opacity:1;}
+  .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3.5s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.2;}50%{opacity:1;}}
 
-  [data-theme="cyberpunk"] {
-    --bg-deep: #080018;
-    --bg-mid: #150030;
-    --bg-glow: #280050;
-    --bg-card: rgba(20, 0, 45, 0.92);
-    --blob-a: #00ffcc;
-    --blob-b: #ff007f;
-    --eye-white: #ffffff;
-    --pupil: #080018;
-    --text-primary: #ffffff;
-    --text-accent: #00ffcc;
-    --text-dim: rgba(0, 255, 204, 0.5);
-    --border-color: #00ffcc;
-  }
+  .moon{position:absolute;right:14%;top:16%;width:9vmin;height:9vmin;border-radius:50%;
+    background:radial-gradient(circle at 35% 32%,#ffffff 0%,#eef2ff 55%,#dfe6ff 100%);
+    box-shadow:0 0 6vmin rgba(200,210,255,.35);opacity:0;transition:opacity 2s ease;}
+  #sky-night .moon{opacity:1;}
 
-  [data-theme="synthwave"] {
-    --bg-deep: #120424;
-    --bg-mid: #220840;
-    --bg-glow: #380d60;
-    --bg-card: rgba(34, 8, 64, 0.92);
-    --blob-a: #ff71ce;
-    --blob-b: #01cdfe;
-    --eye-white: #ffffff;
-    --pupil: #120424;
-    --text-primary: #fffb96;
-    --text-accent: #ff71ce;
-    --text-dim: rgba(255, 113, 206, 0.5);
-    --border-color: #ff71ce;
-  }
+  .grain{position:fixed;inset:0;z-index:1;opacity:.035;pointer-events:none;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
 
-  * { box-sizing: border-box; }
+  /* ---------- GROUND ---------- */
+  .ground{position:fixed;left:0;right:0;bottom:0;height:16vh;z-index:2;
+    background:linear-gradient(180deg,rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 100%);}
+  [data-period="night"] .ground{background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(10,14,30,.5) 100%);}
+  [data-period="evening"] .ground{background:linear-gradient(180deg,rgba(120,50,60,0) 0%, rgba(90,40,60,.4) 100%);}
 
-  html, body {
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
-    background: var(--bg-deep);
-    color: var(--text-primary);
-    font-family: var(--font-active);
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.4s ease, color 0.4s ease;
-  }
+  /* ---------- CLOUDS ---------- */
+  #clouds{position:fixed;inset:0;z-index:3;pointer-events:none;transition:opacity .6s ease;}
+  #clouds.hidden{opacity:0;pointer-events:none;}
+  .cloud{position:absolute;pointer-events:auto;cursor:grab;filter:drop-shadow(0 8px 18px rgba(30,40,60,.12));
+    transition:filter .2s ease; touch-action:none;}
+  .cloud:active{cursor:grabbing;}
+  .cloud svg{display:block;width:100%;height:100%;}
+  .cloud-puff{fill:#ffffff;}
+  [data-period="evening"] .cloud-puff{fill:#ffe3d6;}
+  [data-period="night"] .cloud-puff{fill:#1c2547;}
+  .cloud-float{animation:cloudFloat 9s ease-in-out infinite;}
+  @keyframes cloudFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-1.2vmin);}}
 
-  body {
-    position: relative;
-    background: radial-gradient(120% 90% at 50% 35%, var(--bg-glow) 0%, var(--bg-mid) 45%, var(--bg-deep) 100%);
-    touch-action: none;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+  /* ---------- STAGE (creature + cat) ---------- */
+  #stage{position:fixed;inset:0;z-index:5;}
 
-  /* Optional CRT Overlay */
-  #crtOverlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 100;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%);
-    background-size: 100% 4px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  #crtOverlay.enabled { opacity: 0.6; }
+  /* creature */
+  #creature{position:absolute;width:26vmin;height:22vmin;left:38vw;top:56vh;
+    transform:translate(-50%,-50%) scale(var(--creature-scale));cursor:grab;touch-action:none;}
+  #creature:active{cursor:grabbing;}
+  .creature-body{width:100%;height:100%;background:#ffffff;
+    box-shadow:0 18px 40px var(--shadow), inset 0 -6px 14px rgba(200,210,230,.35);
+    animation:breathe 4.2s ease-in-out infinite;
+    border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;
+    transition:border-radius .4s ease, transform .25s ease;
+    position:relative;}
+  @keyframes breathe{0%,100%{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}50%{border-radius:48% 52% 45% 55% / 55% 48% 52% 45%;}}
+  .c-eye{position:absolute;top:38%;width:15%;height:20%;background:#22303f;border-radius:50%;transition:transform .12s ease, border-radius .2s ease;}
+  .c-eye.left{left:32%;} .c-eye.right{right:32%;}
+  .c-eye::after{content:"";position:absolute;top:18%;left:20%;width:35%;height:35%;background:#fff;border-radius:50%;}
+  .c-eye.happy{border-radius:50% 50% 10% 10%;height:12%;top:44%;}
+  .c-blush{position:absolute;top:56%;width:11%;height:6%;border-radius:50%;background:rgba(255,150,150,.45);transition:transform .3s ease, background .3s ease;}
+  .c-blush.left{left:18%;} .c-blush.right{right:18%;}
+  .c-blush.extra{background:rgba(255,110,130,.75);transform:scale(1.35);}
+  .c-mouth{position:absolute;left:50%;top:60%;width:12%;height:6%;border-radius:0 0 60% 60%;
+    border-bottom:.5vmin solid #22303f;border-left:none;border-right:none;transform:translateX(-50%);transition:transform .2s ease, height .2s ease;}
+  .c-mouth.open{height:12%;border-radius:50%;background:#22303f;border-bottom:none;}
 
-  /* Ambient Stars */
-  #stars {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-  #stars span {
-    position: absolute;
-    background: #ffffff;
-    border-radius: 50%;
-    opacity: 0.5;
-    animation: twinkle 4s ease-in-out infinite;
-  }
-  @keyframes twinkle {
-    0%, 100% { opacity: 0.15; }
-    50% { opacity: 0.75; }
-  }
+  /* cat */
+  #cat{position:absolute;width:14vmin;height:14vmin;right:12vw;bottom:9vh;touch-action:none;cursor:pointer;}
+  .cat-body{position:relative;width:100%;height:100%;transition:transform .2s ease;}
+  .cat-tail{position:absolute;right:-6%;bottom:6%;width:10%;height:40%;background:#fbfaf7;border-radius:50%;
+    box-shadow:inset -2px 0 4px rgba(180,180,190,.25);
+    transform-origin:bottom center;animation:tailwag 3.6s ease-in-out infinite;z-index:1;transition:transform .2s ease;}
+  @keyframes tailwag{0%,100%{transform:rotate(-8deg);}50%{transform:rotate(14deg);}}
+  .cat-tail.excited{animation:tailExcited 0.7s ease-in-out infinite;}
+  @keyframes tailExcited{0%,100%{transform:rotate(-22deg);}50%{transform:rotate(26deg);}}
+  .cat-blob{position:absolute;bottom:0;left:6%;width:76%;height:58%;background:#fbfaf7;
+    border-radius:50% 50% 45% 45%/62% 62% 38% 38%;
+    box-shadow:0 10px 22px var(--shadow), inset 0 -5px 10px rgba(200,196,190,.35);z-index:2;}
+  .cat-paw{position:absolute;bottom:-2%;width:16%;height:16%;background:#fbfaf7;border-radius:50%;
+    box-shadow:inset 0 -2px 3px rgba(190,186,180,.4);z-index:3;transition:transform .2s ease;}
+  .cat-paw.l{left:14%;} .cat-paw.r{left:44%;}
+  .cat-head{position:absolute;top:0;left:16%;width:64%;height:56%;background:#fefefc;border-radius:52% 52% 48% 48%/58% 58% 42% 42%;
+    box-shadow:0 6px 14px rgba(30,40,60,.08);z-index:4;transition:transform .2s ease;}
+  .cat-ear{position:absolute;top:-10%;width:26%;height:36%;background:#fefefc;border-radius:62% 38% 6% 6%/78% 78% 10% 10%;z-index:3;transition:transform .2s ease;}
+  .cat-ear.l{left:2%;transform:rotate(-14deg);} .cat-ear.r{right:2%;transform:rotate(14deg);}
+  .cat-ear::after{content:"";position:absolute;left:26%;top:26%;width:48%;height:52%;background:#ffd9d6;
+    border-radius:62% 38% 6% 6%/78% 78% 10% 10%;}
+  .cat-eye{position:absolute;top:44%;width:14%;height:16%;background:#4b5a68;border-radius:50%;animation:blink 5.5s infinite;z-index:5;transition:height .15s ease, border-radius .15s ease;}
+  .cat-eye.l{left:20%;} .cat-eye.r{right:20%;}
+  .cat-eye::after{content:"";position:absolute;top:14%;left:18%;width:34%;height:34%;background:#fff;border-radius:50%;}
+  .cat-eye.happy{height:6%;border-radius:50% 50% 10% 10%;top:48%;}
+  @keyframes blink{0%,92%,100%{transform:scaleY(1);}95%{transform:scaleY(.1);}}
+  .cat-nose{position:absolute;left:50%;top:62%;width:6%;height:5%;background:#f2a3a8;border-radius:50% 50% 60% 60%;
+    transform:translateX(-50%);z-index:5;}
+  .cat-blush{position:absolute;top:58%;width:16%;height:9%;border-radius:50%;background:rgba(255,170,170,.35);z-index:5;}
+  .cat-blush.l{left:2%;} .cat-blush.r{right:2%;}
+  .cat-whiskers{position:absolute;top:56%;width:26%;height:1px;background:rgba(90,90,100,.35);z-index:5;}
+  .cat-whiskers.l{left:-20%;} .cat-whiskers.r{right:-20%;}
 
-  /* Sleek Collapsible Gear Widget */
-  #gearWidget {
-    position: absolute;
-    top: calc(16px + env(safe-area-inset-top, 0px));
-    right: 18px;
-    display: flex;
-    align-items: center;
-    background: var(--bg-card);
-    border: 2px solid var(--border-color);
-    box-shadow: 2px 2px 0px var(--border-color);
-    backdrop-filter: blur(8px);
-    z-index: 30;
-    opacity: 0.35;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 4px;
-    overflow: hidden;
+  /* Creature & Cat activity animations */
+  .creature-wiggle{animation:creatureWiggle .75s ease-in-out !important;}
+  @keyframes creatureWiggle{
+    0%,100%{transform:rotate(0deg) scale(1);}
+    25%{transform:rotate(-7deg) scale(1.06,0.94);}
+    50%{transform:rotate(7deg) scale(0.94,1.06);}
+    75%{transform:rotate(-4deg) scale(1.03,0.97);}
   }
-  #gearWidget:hover, #gearWidget.active {
-    opacity: 1;
-    box-shadow: 4px 4px 0px var(--border-color);
+  .creature-flip{animation:creatureFlip .7s cubic-bezier(.34,1.56,.64,1) !important;}
+  @keyframes creatureFlip{
+    0%{transform:translateY(0) rotate(0deg);}
+    50%{transform:translateY(-48px) rotate(180deg) scale(1.12);}
+    100%{transform:translateY(0) rotate(360deg) scale(1);}
   }
+  .cat-pounce{animation:catPounce .65s cubic-bezier(.34,1.56,.64,1) !important;}
+  @keyframes catPounce{
+    0%{transform:translateY(0) scale(1);}
+    25%{transform:translateY(3px) scale(1.08,0.92);}
+    60%{transform:translateY(-22px) scale(0.92,1.08);}
+    100%{transform:translateY(0) scale(1);}
+  }
+  .cat-purr{animation:catPurr .45s ease-in-out 3;}
+  @keyframes catPurr{0%,100%{transform:scale(1);}50%{transform:scale(1.04,0.96);}}
+  .ear-twitch-l{animation:earTwitchL .3s ease 2;}
+  @keyframes earTwitchL{0%,100%{transform:rotate(-14deg);}50%{transform:rotate(-30deg);}}
+  .ear-twitch-r{animation:earTwitchR .3s ease 2;}
+  @keyframes earTwitchR{0%,100%{transform:rotate(14deg);}50%{transform:rotate(30deg);}}
 
-  .gear-trigger {
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-family: var(--font-active);
-    font-size: 16px;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    outline: none;
-    transition: transform 0.3s ease, color 0.2s ease;
+  /* Floating Emotes & Bubbles */
+  .floating-emote{position:fixed;pointer-events:none;z-index:20;font-size:19px;
+    animation:floatUpFade 1.4s cubic-bezier(.22,1,.36,1) forwards;
+    transform:translate(-50%,-50%);user-select:none;}
+  @keyframes floatUpFade{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}
+    20%{opacity:1;transform:translate(-50%,-70%) scale(1.2);}
+    100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)), -110px) scale(0.9);}
   }
-  #gearWidget:hover .gear-trigger, #gearWidget.active .gear-trigger {
-    transform: rotate(90deg);
-    color: var(--text-accent);
-  }
-
-  .gear-menu {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    max-width: 0;
-    opacity: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.35s ease;
-    padding-right: 0;
-  }
-  #gearWidget:hover .gear-menu, #gearWidget.active .gear-menu {
-    max-width: 240px;
-    opacity: 1;
-    padding-right: 6px;
+  .cat-bubble{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+    background:var(--glass);border:1px solid var(--glass-border);backdrop-filter:blur(10px);
+    padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600;color:var(--ink);
+    box-shadow:0 4px 14px var(--shadow);pointer-events:none;white-space:nowrap;
+    animation:bubblePop 1.8s cubic-bezier(.16,1,.3,1) forwards;z-index:10;}
+  @keyframes bubblePop{
+    0%{opacity:0;transform:translate(-50%,8px) scale(0.7);}
+    15%{opacity:1;transform:translate(-50%,-4px) scale(1);}
+    75%{opacity:1;transform:translate(-50%,-6px) scale(1);}
+    100%{opacity:0;transform:translate(-50%,-16px) scale(0.85);}
   }
 
-  .gear-btn {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    font-family: var(--font-active);
-    font-size: 11px;
-    padding: 6px 10px;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .gear-btn:hover {
-    background: var(--text-accent);
-    color: var(--bg-deep);
-  }
-  .gear-btn:active {
-    transform: scale(0.94);
-  }
+  /* ---------- GREETING ---------- */
+  #greeting{position:fixed;top:9vh;left:50%;transform:translateX(-50%);z-index:6;text-align:center;pointer-events:none;width:90vw;max-width:850px;}
+  #greeting h1{margin:0;font-size:var(--title-font-size);font-weight:600;letter-spacing:-.01em;color:var(--ink);
+    display:inline-flex;align-items:center;justify-content:center;min-height:1.25em;transition:font-size .15s ease;}
+  .type-cursor{display:inline-block;width:2.5px;height:0.92em;background-color:currentColor;margin-left:5px;border-radius:1px;animation:cursorBlink 0.9s cubic-bezier(.4,0,.2,1) infinite;}
+  @keyframes cursorBlink{0%,100%{opacity:1;}50%{opacity:0;}}
+  #greeting p{margin:.4em 0 0;font-size:var(--sub-font-size);font-weight:500;color:var(--ink-soft);transition:color .3s ease, font-size .15s ease;}
+  [data-period="night"] #greeting h1,[data-period="night"] #greeting p{color:#eef1ff;}
+  [data-period="evening"] #greeting h1,[data-period="evening"] #greeting p{color:#fff3ea;}
 
-  /* Original Blob Creature */
-  #creatureWrap {
-    position: absolute;
-    width: calc(min(40vh, 40vw, 300px) * var(--creature-scale));
-    height: calc(min(40vh, 40vw, 300px) * var(--creature-scale));
-    left: 0;
-    top: 0;
-    cursor: grab;
-    touch-action: none;
-    will-change: transform;
-    z-index: 20;
-  }
-  #creatureWrap.dragging { cursor: grabbing; }
-  #creatureWrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* ---------- SETTINGS ---------- */
+  #settings-wrap{position:fixed;top:3vh;right:3vh;z-index:10;display:flex;flex-direction:column;align-items:flex-end;}
+  #gear{width:44px;height:44px;border-radius:50%;
+    background:var(--glass);border:1px solid var(--glass-border);backdrop-filter:blur(14px);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px var(--shadow);
+    transition:transform .3s cubic-bezier(.16,1,.3,1), background .2s ease, box-shadow .2s ease;
+    user-select:none;}
+  #gear:hover{transform:rotate(45deg) scale(1.06);}
+  #gear.active{transform:rotate(90deg);}
+  #gear svg{width:20px;height:20px;stroke:var(--ink);transition:transform .3s ease;}
+  [data-period="night"] #gear svg,[data-period="evening"] #gear svg{stroke:#fff;}
+  [data-period="night"] #gear,[data-period="evening"] #gear{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
 
-  #ball {
-    position: absolute;
-    width: 42px;
-    height: 42px;
-    pointer-events: none;
-    opacity: 0;
-    left: 0;
-    top: 0;
-    will-change: transform;
-    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
-    z-index: 15;
-  }
-  #ball svg { width: 100%; height: 100%; overflow: visible; }
+  #panel{position:absolute;top:54px;right:0;width:300px;max-width:86vw;max-height:82vh;overflow-y:auto;padding:20px;
+    background:var(--glass);border:1px solid var(--glass-border);backdrop-filter:blur(20px);
+    border-radius:20px;box-shadow:0 20px 50px var(--shadow);
+    transform:translateY(-12px) scale(.95);opacity:0;pointer-events:none;
+    transition:transform .28s cubic-bezier(.16,1,.3,1), opacity .25s ease;
+    transform-origin:top right;}
+  #panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto;}
+  #panel h3{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--ink);}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
+  .row label{font-size:13px;font-weight:500;color:var(--ink);}
+  select,input[type="text"]{font-family:var(--font);font-size:13px;padding:6px 10px;border-radius:10px;
+    border:1px solid rgba(34,48,63,.15);background:rgba(255,255,255,.8);color:var(--ink);outline:none;}
+  .switch{width:40px;height:24px;border-radius:20px;background:rgba(34,48,63,.18);position:relative;cursor:pointer;flex-shrink:0;}
+  .switch.on{background:#5b8def;}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;
+    box-shadow:0 2px 4px rgba(0,0,0,.2);transition:left .2s ease;}
+  .switch.on::after{left:18px;}
+  input[type="range"]{width:110px;cursor:pointer;}
+  .hint{font-size:11px;color:var(--ink-soft);margin-top:6px;line-height:1.4;}
 
-  /* Greeting Container */
-  #greeting {
-    position: absolute;
-    top: 9vh;
-    left: 0;
-    right: 0;
-    text-align: center;
-    pointer-events: none;
-    z-index: 10;
-    padding: 0 24px;
-  }
+  /* Stepper controls for font size */
+  .stepper-wrap{display:flex;align-items:center;background:rgba(255,255,255,.6);border:1px solid rgba(34,48,63,.15);border-radius:10px;padding:2px;gap:2px;}
+  .step-btn{width:26px;height:26px;border:none;background:rgba(255,255,255,.85);color:var(--ink);border-radius:7px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;line-height:1;}
+  .step-btn:hover{background:#fff;transform:scale(1.08);}
+  .step-btn:active{transform:scale(0.92);}
+  .step-val{font-size:12px;font-weight:600;min-width:38px;text-align:center;color:var(--ink);}
 
-  #greeting .line1 {
-    font-family: var(--font-active);
-    font-size: calc(clamp(16px, 4.2vw, 42px) * var(--greet-scale));
-    letter-spacing: -0.01em;
-    line-height: 1.35;
-    white-space: pre-wrap;
-    word-break: break-word;
-    color: var(--text-primary);
+  [data-period="night"] #panel,[data-period="evening"] #panel{
+    background:rgba(18,24,42,.78);border-color:rgba(255,255,255,.16);box-shadow:0 20px 50px rgba(0,0,0,.45);
   }
+  [data-period="night"] #panel h3,[data-period="evening"] #panel h3,
+  [data-period="night"] .row label,[data-period="evening"] .row label,
+  [data-period="night"] #speed-label,[data-period="evening"] #speed-label{color:#eef1ff;}
+  [data-period="night"] .stepper-wrap,[data-period="evening"] .stepper-wrap{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);}
+  [data-period="night"] .step-btn,[data-period="evening"] .step-btn{background:rgba(255,255,255,.15);color:#fff;}
+  [data-period="night"] .step-btn:hover,[data-period="evening"] .step-btn:hover{background:rgba(255,255,255,.3);}
+  [data-period="night"] .step-val,[data-period="evening"] .step-val{color:#fff;}
+  [data-period="night"] select,[data-period="evening"] select,
+  [data-period="night"] input[type="text"],[data-period="evening"] input[type="text"]{
+    background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;
+  }
+  [data-period="night"] select option,[data-period="evening"] select option{background:#182038;color:#fff;}
+  [data-period="night"] .hint,[data-period="evening"] .hint{color:rgba(238,241,255,.6);}
 
-  #greeting .typed {
-    background: linear-gradient(180deg, #ffd9c2, var(--text-accent) 85%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 35px rgba(255, 138, 91, 0.3);
+  /* mobile */
+  @media (max-width:640px){
+    #creature{width:34vmin;height:28vmin;left:50vw;top:50vh;}
+    #cat{width:18vmin;height:17vmin;right:8vw;bottom:8vh;}
   }
-
-  #greeting .cursor {
-    display: inline-block;
-    width: 0.5em;
-    height: 1.0em;
-    background: var(--text-accent);
-    margin-left: 4px;
-    animation: blink 0.9s step-end infinite;
-    vertical-align: -0.1em;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
-
-  #greeting .line2 {
-    margin-top: 14px;
-    font-family: var(--font-active);
-    font-size: calc(clamp(10px, 1.6vw, 15px) * var(--greet-scale));
-    letter-spacing: 0.05em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
-
-  /* Particles */
-  #particles {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 25;
-  }
-  .particle {
-    position: absolute;
-    pointer-events: none;
-    font-size: 20px;
-    line-height: 1;
-    opacity: 0.95;
-    animation: floatUp 1.1s ease-out forwards;
-  }
-  .particle.zzz {
-    font-family: var(--font-active);
-    font-size: 14px;
-    color: var(--text-dim);
-    animation: floatZzz 1.8s ease-out forwards;
-  }
-  @keyframes floatUp {
-    0% { transform: translate(0,0) scale(0.6); opacity: 0; }
-    15% { opacity: 1; }
-    100% { transform: translate(var(--dx,0px), -70px) scale(1.1); opacity: 0; }
-  }
-  @keyframes floatZzz {
-    0% { transform: translate(0,0) scale(0.5); opacity: 0; }
-    20% { opacity: 1; }
-    100% { transform: translate(14px,-46px) scale(1); opacity: 0; }
-  }
-
-  #hint {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(4vh + env(safe-area-inset-bottom, 0px));
-    text-align: center;
-    color: var(--hint);
-    font-family: var(--font-active);
-    font-size: clamp(9px, 1.2vw, 12px);
-    letter-spacing: 0.04em;
-    transition: opacity 1.2s ease;
-    pointer-events: none;
-    padding: 0 20px;
-    z-index: 10;
-  }
-
-  /* Settings Modal / Flexibility Drawer */
-  #modalBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(6px);
-    z-index: 200;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  #modalBackdrop.open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  #settingsModal {
-    background: var(--bg-card);
-    border: 2px solid var(--border-color);
-    box-shadow: 6px 6px 0px var(--border-color);
-    width: min(520px, 92vw);
-    max-height: 85vh;
-    overflow-y: auto;
-    padding: 24px;
-    color: var(--text-primary);
-    font-family: var(--font-active);
-    transform: scale(0.95);
-    transition: transform 0.2s ease;
-  }
-  #modalBackdrop.open #settingsModal {
-    transform: scale(1);
-  }
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px dashed var(--border-color);
-    padding-bottom: 14px;
-    margin-bottom: 20px;
-  }
-  .modal-title {
-    font-size: 13px;
-    color: var(--text-accent);
-    letter-spacing: 0.05em;
-  }
-
-  .setting-group { margin-bottom: 20px; }
-  .setting-label {
-    font-size: 10px;
-    margin-bottom: 8px;
-    color: var(--text-primary);
-    display: block;
-    letter-spacing: 0.04em;
-  }
-
-  .setting-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
-  }
-
-  .option-btn {
-    background: rgba(0, 0, 0, 0.35);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    color: var(--text-primary);
-    font-family: var(--font-active);
-    font-size: 10px;
-    padding: 8px 6px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s ease;
-  }
-  .option-btn:hover { border-color: var(--text-accent); }
-  .option-btn.active {
-    background: var(--text-accent);
-    color: var(--bg-deep);
-    border-color: var(--text-accent);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-  }
-
-  .setting-input {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.35);
-    border: 2px solid var(--border-color);
-    color: var(--text-primary);
-    font-family: var(--font-active);
-    font-size: 11px;
-    padding: 10px;
-    outline: none;
-  }
-
-  .range-slider {
-    width: 100%;
-    accent-color: var(--text-accent);
-    cursor: pointer;
-  }
-
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-  }
-
-  #settingsModal::-webkit-scrollbar { width: 6px; }
-  #settingsModal::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-  #settingsModal::-webkit-scrollbar-thumb { background: var(--border-color); }
 </style>
 </head>
-<body>
+<body data-period="morning">
 
-<div id="crtOverlay"></div>
-<div id="stars"></div>
+  <div class="sky" id="sky-morning"><div class="sun-glow"></div></div>
+  <div class="sky" id="sky-afternoon"><div class="sun-glow"></div></div>
+  <div class="sky" id="sky-evening"><div class="sun-glow"></div></div>
+  <div class="sky" id="sky-night"><div class="sun-glow"></div><div class="stars" id="starfield"></div><div class="moon"></div></div>
+  <div class="grain"></div>
+  <div class="ground"></div>
 
-<!-- Sleek Collapsible Gear Widget -->
-<div id="gearWidget">
-  <button id="gearTrigger" class="gear-trigger" title="Settings & Text Size">⚙</button>
-  <div class="gear-menu">
-    <button class="gear-btn" id="sizeDown" title="Smaller Text">–</button>
-    <button class="gear-btn" id="sizeUp" title="Bigger Text">+</button>
-    <button class="gear-btn" id="openSettings" title="Full Settings">MENU</button>
+  <div id="clouds"></div>
+
+  <div id="greeting">
+    <h1><span id="greet-text">Good morning</span><span class="type-cursor" aria-hidden="true"></span></h1>
+    <p id="greet-sub">Take it slow today.</p>
   </div>
-</div>
 
-<!-- Greeting -->
-<div id="greeting">
-  <div class="line1"><span class="typed" id="greetingText"></span><span class="cursor"></span></div>
-  <div class="line2" id="greetingLine2">Tuesday, September 22</div>
-</div>
-
-<div id="particles"></div>
-
-<!-- Jelly Ball -->
-<div id="ball">
-  <svg viewBox="0 0 100 100">
-    <defs>
-      <radialGradient id="jellyGrad" cx="35%" cy="28%" r="75%">
-        <stop offset="0%" stop-color="#ffd9a0" stop-opacity="0.95"/>
-        <stop offset="45%" stop-color="#ff8a5b" stop-opacity="0.88"/>
-        <stop offset="100%" stop-color="#e2492f" stop-opacity="0.82"/>
-      </radialGradient>
-    </defs>
-    <g id="jellyGroup">
-      <ellipse cx="50" cy="50" rx="42" ry="42" fill="url(#jellyGrad)" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
-      <ellipse cx="36" cy="32" rx="13" ry="8" fill="#ffffff" opacity="0.5"/>
-      <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-    </g>
-  </svg>
-</div>
-
-<!-- Original Blob Creature -->
-<div id="creatureWrap">
-  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <radialGradient id="blobGrad" cx="35%" cy="30%" r="75%">
-        <stop offset="0%" stop-color="var(--blob-a)"/>
-        <stop offset="100%" stop-color="var(--blob-b)"/>
-      </radialGradient>
-      <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="6"/>
-      </filter>
-    </defs>
-
-    <g id="squashGroup">
-      <ellipse id="shadow" cx="200" cy="330" rx="110" ry="18" fill="#000000" opacity="0.25" filter="url(#soft)"/>
-
-      <g id="bodyGroup">
-        <path id="blobBody" fill="url(#blobGrad)"/>
-
-        <g id="browL"><rect x="-22" y="-6" width="44" height="9" rx="4.5" fill="var(--pupil)" opacity="0.85"/></g>
-        <g id="browR"><rect x="-22" y="-6" width="44" height="9" rx="4.5" fill="var(--pupil)" opacity="0.85"/></g>
-
-        <g id="leftEyeGroup">
-          <ellipse id="leftSclera" cx="0" cy="0" rx="34" ry="40" fill="var(--eye-white)"/>
-          <circle id="leftPupil" cx="0" cy="0" r="15" fill="var(--pupil)"/>
-          <circle id="leftShine" cx="-5" cy="-6" r="4.5" fill="#ffffff"/>
-        </g>
-        <g id="rightEyeGroup">
-          <ellipse id="rightSclera" cx="0" cy="0" rx="34" ry="40" fill="var(--eye-white)"/>
-          <circle id="rightPupil" cx="0" cy="0" r="15" fill="var(--pupil)"/>
-          <circle id="rightShine" cx="-5" cy="-6" r="4.5" fill="#ffffff"/>
-        </g>
-
-        <path id="mouthSmile" fill="none" stroke="var(--pupil)" stroke-width="6" stroke-linecap="round"/>
-        <ellipse id="mouthO" cx="200" cy="262" rx="12" ry="14" fill="var(--pupil)" opacity="0"/>
-        <line id="mouthSleep" x1="185" y1="260" x2="215" y2="260" stroke="var(--pupil)" stroke-width="5" stroke-linecap="round" opacity="0"/>
-
-        <ellipse id="leftCheek" cx="128" cy="235" rx="22" ry="12" fill="#ffffff" opacity="0" filter="url(#soft)"/>
-        <ellipse id="rightCheek" cx="272" cy="235" rx="22" ry="12" fill="#ffffff" opacity="0" filter="url(#soft)"/>
-      </g>
-    </g>
-  </svg>
-</div>
-
-<div id="hint">move, click, or drag it — everything is flexible ⚙</div>
-
-<!-- Settings Modal / Flexibility Drawer -->
-<div id="modalBackdrop">
-  <div id="settingsModal">
-    <div class="modal-header">
-      <div class="modal-title">⚙ FLEXIBILITY & SETTINGS</div>
-      <button class="gear-btn" id="closeModal">✕</button>
-    </div>
-
-    <!-- Font Selector -->
-    <div class="setting-group">
-      <label class="setting-label">1. TEXT FONT TYPE</label>
-      <div class="setting-options" id="fontOptions">
-        <button class="option-btn active" data-font="'Press Start 2P', monospace">Press Start</button>
-        <button class="option-btn" data-font="'Silkscreen', monospace">Silkscreen</button>
-        <button class="option-btn" data-font="'Pixelify Sans', sans-serif">Pixelify</button>
-        <button class="option-btn" data-font="'VT323', monospace">VT323</button>
-        <button class="option-btn" data-font="'Fraunces', serif">Fraunces</button>
+  <div id="stage">
+    <div id="creature">
+      <div class="creature-body">
+        <div class="c-eye left"></div>
+        <div class="c-eye right"></div>
+        <div class="c-blush left"></div>
+        <div class="c-blush right"></div>
+        <div class="c-mouth"></div>
       </div>
     </div>
 
-    <!-- Color Palette -->
-    <div class="setting-group">
-      <label class="setting-label">2. COLOR PALETTE</label>
-      <div class="setting-options" id="themeOptions">
-        <button class="option-btn active" data-theme="default">Cosmic Glow</button>
-        <button class="option-btn" data-theme="terracotta">Terracotta</button>
-        <button class="option-btn" data-theme="gameboy">GameBoy</button>
-        <button class="option-btn" data-theme="cyberpunk">Cyberpunk</button>
-        <button class="option-btn" data-theme="synthwave">Synthwave</button>
-      </div>
-    </div>
-
-    <!-- Custom Greeting Name -->
-    <div class="setting-group">
-      <label class="setting-label">3. CUSTOM NAME / GREETING</label>
-      <input type="text" id="customNameInput" class="setting-input" value="Aayush" placeholder="Enter name...">
-    </div>
-
-    <!-- Text Scale Slider + Buttons -->
-    <div class="setting-group">
-      <label class="setting-label" id="textScaleLabel">4. TEXT SCALE (1.0x)</label>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button class="gear-btn" id="modalSizeDown" style="padding: 6px 12px; font-size: 12px;">–</button>
-        <input type="range" id="textScaleSlider" class="range-slider" min="0.6" max="2.0" step="0.05" value="1.0" style="flex: 1;">
-        <button class="gear-btn" id="modalSizeUp" style="padding: 6px 12px; font-size: 12px;">+</button>
-      </div>
-    </div>
-
-    <!-- Creature Scale Slider -->
-    <div class="setting-group">
-      <label class="setting-label" id="creatureScaleLabel">5. CREATURE SCALE (1.0x)</label>
-      <input type="range" id="creatureScaleSlider" class="range-slider" min="0.6" max="1.8" step="0.05" value="1.0">
-    </div>
-
-    <!-- Audio & CRT Toggles -->
-    <div class="setting-group">
-      <label class="setting-label">6. RETRO EFFECTS & AUDIO</label>
-      <div class="toggle-row">
-        <span>CRT Scanlines Filter</span>
-        <button class="gear-btn" id="toggleCrt">OFF</button>
-      </div>
-      <div class="toggle-row">
-        <span>8-Bit Sound FX</span>
-        <button class="gear-btn" id="toggleAudio">OFF</button>
+    <div id="cat">
+      <div class="cat-body">
+        <div class="cat-tail"></div>
+        <div class="cat-blob"></div>
+        <div class="cat-paw l"></div>
+        <div class="cat-paw r"></div>
+        <div class="cat-head">
+          <div class="cat-ear l"></div>
+          <div class="cat-ear r"></div>
+          <div class="cat-eye l"></div>
+          <div class="cat-eye r"></div>
+          <div class="cat-nose"></div>
+          <div class="cat-blush l"></div>
+          <div class="cat-blush r"></div>
+          <div class="cat-whiskers l"></div>
+          <div class="cat-whiskers r"></div>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+  <div id="settings-wrap">
+    <div id="gear" title="Settings" role="button" aria-label="Toggle settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </div>
+
+    <div id="panel">
+      <h3>Flexibility</h3>
+      <div class="row">
+        <label for="time-select">Time of day</label>
+        <select id="time-select">
+          <option value="auto">Auto</option>
+          <option value="morning">Morning</option>
+          <option value="afternoon">Afternoon</option>
+          <option value="evening">Evening</option>
+          <option value="night">Night</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Clouds</label>
+        <div class="switch on" id="cloud-toggle"></div>
+      </div>
+      <div class="row">
+        <label for="creature-size">Creature size</label>
+        <input type="range" id="creature-size" min="0.7" max="1.4" step="0.05" value="1">
+      </div>
+      <div class="row">
+        <label for="speed-slider">Typing speed</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="speed-slider" min="1" max="5" step="1" value="3" style="width:90px;">
+          <span id="speed-label" style="font-size:12px;font-weight:600;min-width:54px;text-align:right;">Normal</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>Title font size</label>
+        <div class="stepper-wrap">
+          <button type="button" class="step-btn" id="title-size-down" aria-label="Decrease title size">−</button>
+          <span class="step-val" id="title-size-val">36px</span>
+          <button type="button" class="step-btn" id="title-size-up" aria-label="Increase title size">+</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Subtitle size</label>
+        <div class="stepper-wrap">
+          <button type="button" class="step-btn" id="sub-size-down" aria-label="Decrease subtitle size">−</button>
+          <span class="step-val" id="sub-size-val">15px</span>
+          <button type="button" class="step-btn" id="sub-size-up" aria-label="Increase subtitle size">+</button>
+        </div>
+      </div>
+      <div class="row" style="align-items:flex-start;flex-direction:column;gap:6px;">
+        <label for="greet-input">Greeting</label>
+        <input type="text" id="greet-input" placeholder="Custom message" style="width:100%;">
+      </div>
+      <div class="hint">Click or pet the cat & creature to play with them. Drag clouds or creature around!</div>
+    </div>
+  </div>
 
 <script>
-(function () {
-  'use strict';
+(function(){
+  const body = document.body;
+  const skies = { morning:'sky-morning', afternoon:'sky-afternoon', evening:'sky-evening', night:'sky-night' };
+  let mode = 'auto';
+  let customGreeting = false;
 
-  // ---------------- Web Audio Synth ----------------
-  var soundEnabled = false;
-  var audioCtx = null;
+  // ---------- TYPEWRITER ANIMATION (LOOP) ----------
+  const greetTextEl = document.getElementById('greet-text');
+  let currentTargetText = 'Good morning';
+  let typedChars = 0;
+  let isDeleting = false;
+  let typingTimeout = null;
+  let typeSpeedMultiplier = 1.0;
 
-  function play8BitSound(type) {
-    if (!soundEnabled) return;
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      var nowTime = audioCtx.currentTime;
-
-      if (type === 'jump') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(160, nowTime);
-        osc.frequency.exponentialRampToValueAtTime(640, nowTime + 0.15);
-        gain.gain.setValueAtTime(0.1, nowTime);
-        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.15);
-        osc.start(nowTime); osc.stop(nowTime + 0.15);
-      } else if (type === 'click') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(440, nowTime);
-        osc.frequency.setValueAtTime(880, nowTime + 0.05);
-        gain.gain.setValueAtTime(0.08, nowTime);
-        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.08);
-        osc.start(nowTime); osc.stop(nowTime + 0.08);
-      } else if (type === 'bounce') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(320, nowTime);
-        osc.frequency.exponentialRampToValueAtTime(140, nowTime + 0.12);
-        gain.gain.setValueAtTime(0.12, nowTime);
-        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.12);
-        osc.start(nowTime); osc.stop(nowTime + 0.12);
-      } else if (type === 'pet') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, nowTime);
-        osc.frequency.setValueAtTime(659.25, nowTime + 0.08);
-        osc.frequency.setValueAtTime(783.99, nowTime + 0.16);
-        gain.gain.setValueAtTime(0.1, nowTime);
-        gain.gain.linearRampToValueAtTime(0.01, nowTime + 0.26);
-        osc.start(nowTime); osc.stop(nowTime + 0.26);
-      }
-    } catch (e) {}
-  }
-
-  // ---------------- Stars ----------------
-  var starsEl = document.getElementById('stars');
-  var starCount = window.innerWidth < 600 ? 36 : 80;
-  for (var i = 0; i < starCount; i++) {
-    var s = document.createElement('span');
-    s.style.left = (Math.random() * 100) + '%';
-    s.style.top = (Math.random() * 70) + '%';
-    s.style.animationDelay = (Math.random() * 4) + 's';
-    var size = (Math.random() * 1.6 + 0.6);
-    s.style.width = size + 'px';
-    s.style.height = size + 'px';
-    starsEl.appendChild(s);
-  }
-
-  // ---------------- Element Refs ----------------
-  var wrap = document.getElementById('creatureWrap');
-  var squashGroup = document.getElementById('squashGroup');
-  var blobBody = document.getElementById('blobBody');
-  var shadow = document.getElementById('shadow');
-  var browL = document.getElementById('browL');
-  var browR = document.getElementById('browR');
-  var leftEyeGroup = document.getElementById('leftEyeGroup');
-  var rightEyeGroup = document.getElementById('rightEyeGroup');
-  var leftPupil = document.getElementById('leftPupil');
-  var rightPupil = document.getElementById('rightPupil');
-  var leftShine = document.getElementById('leftShine');
-  var rightShine = document.getElementById('rightShine');
-  var mouthSmile = document.getElementById('mouthSmile');
-  var mouthO = document.getElementById('mouthO');
-  var mouthSleep = document.getElementById('mouthSleep');
-  var leftCheek = document.getElementById('leftCheek');
-  var rightCheek = document.getElementById('rightCheek');
-  var ballEl = document.getElementById('ball');
-  var jellyGroup = document.getElementById('jellyGroup');
-  var particlesEl = document.getElementById('particles');
-  var greetingText = document.getElementById('greetingText');
-  var greetingLine2 = document.getElementById('greetingLine2');
-  var crtOverlay = document.getElementById('crtOverlay');
-  var modalBackdrop = document.getElementById('modalBackdrop');
-  var gearWidget = document.getElementById('gearWidget');
-  var gearTrigger = document.getElementById('gearTrigger');
-
-  var currentName = 'Aayush';
-  var currentGreetString = '';
-  var typeLoopTimer = null;
-
-  var TYPE_SPEED = 55, DELETE_SPEED = 32, HOLD_AFTER_TYPE = 1900, HOLD_AFTER_DELETE = 500;
-
-  function startTypeLoop(el, text) {
-    if (typeLoopTimer) clearTimeout(typeLoopTimer);
-    var i = 0, deleting = false;
-    function step() {
-      if (!deleting) {
-        i++;
-        el.textContent = text.slice(0, i);
-        if (i >= text.length) { deleting = true; typeLoopTimer = setTimeout(step, HOLD_AFTER_TYPE); return; }
-        typeLoopTimer = setTimeout(step, TYPE_SPEED);
-      } else {
-        i--;
-        el.textContent = text.slice(0, i);
-        if (i <= 0) { deleting = false; typeLoopTimer = setTimeout(step, HOLD_AFTER_DELETE); return; }
-        typeLoopTimer = setTimeout(step, DELETE_SPEED);
-      }
-    }
-    step();
-  }
-
-  function updateGreeting() {
-    var d = new Date();
-    var h = d.getHours();
-    var greet = h < 5 ? 'Good night, ' + currentName
-      : h < 12 ? 'Good morning, ' + currentName
-      : h < 17 ? 'Good afternoon, ' + currentName
-      : h < 21 ? 'Good evening, ' + currentName
-      : 'Good night, ' + currentName;
-    if (greet !== currentGreetString) {
-      currentGreetString = greet;
-      startTypeLoop(greetingText, greet);
-    }
-    greetingLine2.textContent = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  }
-  updateGreeting();
-  setInterval(updateGreeting, 60000);
-
-  // ---------------- Flexibility & Settings System ----------------
-  var textScale = 1.0;
-  var creatureScale = 1.0;
-
-  try {
-    var savedFont = localStorage.getItem('pixelFont');
-    if (savedFont) setFont(savedFont);
-    var savedTheme = localStorage.getItem('pixelTheme');
-    if (savedTheme) setTheme(savedTheme);
-    var savedName = localStorage.getItem('pixelName');
-    if (savedName) { currentName = savedName; document.getElementById('customNameInput').value = savedName; updateGreeting(); }
-    var savedTScale = localStorage.getItem('pixelTScale');
-    if (savedTScale) setTextScale(parseFloat(savedTScale));
-    var savedCScale = localStorage.getItem('pixelCScale');
-    if (savedCScale) setCreatureScale(parseFloat(savedCScale));
-  } catch (e) {}
-
-  function setFont(font) {
-    document.documentElement.style.setProperty('--font-active', font);
-    document.querySelectorAll('#fontOptions .option-btn').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-font') === font);
-    });
-    try { localStorage.setItem('pixelFont', font); } catch (e) {}
-  }
-
-  function setTheme(theme) {
-    if (theme === 'default') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', theme);
-    document.querySelectorAll('#themeOptions .option-btn').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
-    });
-    try { localStorage.setItem('pixelTheme', theme); } catch (e) {}
-  }
-
-  function setTextScale(scale) {
-    textScale = Math.max(0.5, Math.min(2.2, scale));
-    document.documentElement.style.setProperty('--greet-scale', textScale);
-    document.getElementById('textScaleSlider').value = textScale;
-    document.getElementById('textScaleLabel').textContent = '4. TEXT SCALE (' + textScale.toFixed(2) + 'x)';
-    try { localStorage.setItem('pixelTScale', textScale); } catch (e) {}
-  }
-
-  function setCreatureScale(scale) {
-    creatureScale = Math.max(0.5, Math.min(2.0, scale));
-    document.documentElement.style.setProperty('--creature-scale', creatureScale);
-    document.getElementById('creatureScaleSlider').value = creatureScale;
-    document.getElementById('creatureScaleLabel').textContent = '5. CREATURE SCALE (' + creatureScale.toFixed(2) + 'x)';
-    try { localStorage.setItem('pixelCScale', creatureScale); } catch (e) {}
-    recalc();
-  }
-
-  // Gear Trigger Click / Hover Behavior
-  gearTrigger.addEventListener('click', function (e) {
-    e.stopPropagation();
-    gearWidget.classList.toggle('active');
-    play8BitSound('click');
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!gearWidget.contains(e.target)) {
-      gearWidget.classList.remove('active');
-    }
-  });
-
-  // Size Controls (both in expandable gear bar and modal)
-  document.getElementById('sizeUp').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale + 0.1); });
-  document.getElementById('sizeDown').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale - 0.1); });
-  document.getElementById('modalSizeUp').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale + 0.1); });
-  document.getElementById('modalSizeDown').addEventListener('click', function () { play8BitSound('click'); setTextScale(textScale - 0.1); });
-
-  document.getElementById('openSettings').addEventListener('click', function () {
-    play8BitSound('click');
-    modalBackdrop.classList.add('open');
-    gearWidget.classList.remove('active');
-  });
-  document.getElementById('closeModal').addEventListener('click', function () { play8BitSound('click'); modalBackdrop.classList.remove('open'); });
-  modalBackdrop.addEventListener('click', function (e) { if (e.target === modalBackdrop) { play8BitSound('click'); modalBackdrop.classList.remove('open'); } });
-
-  document.getElementById('fontOptions').addEventListener('click', function (e) {
-    if (e.target.classList.contains('option-btn')) { play8BitSound('click'); setFont(e.target.getAttribute('data-font')); }
-  });
-
-  document.getElementById('themeOptions').addEventListener('click', function (e) {
-    if (e.target.classList.contains('option-btn')) { play8BitSound('click'); setTheme(e.target.getAttribute('data-theme')); }
-  });
-
-  document.getElementById('customNameInput').addEventListener('input', function (e) {
-    currentName = e.target.value.trim() || 'Aayush';
-    currentGreetString = '';
-    updateGreeting();
-    try { localStorage.setItem('pixelName', currentName); } catch (e) {}
-  });
-
-  document.getElementById('textScaleSlider').addEventListener('input', function (e) { setTextScale(parseFloat(e.target.value)); });
-  document.getElementById('creatureScaleSlider').addEventListener('input', function (e) { setCreatureScale(parseFloat(e.target.value)); });
-
-  document.getElementById('toggleCrt').addEventListener('click', function (e) {
-    play8BitSound('click');
-    crtOverlay.classList.toggle('enabled');
-    e.target.textContent = crtOverlay.classList.contains('enabled') ? 'ON' : 'OFF';
-  });
-
-  document.getElementById('toggleAudio').addEventListener('click', function (e) {
-    soundEnabled = !soundEnabled;
-    e.target.textContent = soundEnabled ? 'ON' : 'OFF';
-    if (soundEnabled) play8BitSound('click');
-  });
-
-  // ---------------- Blob Creature Physics & Motion ----------------
-  var EYE_L = { x: 155, y: 190 };
-  var EYE_R = { x: 245, y: 190 };
-  var PUPIL_RANGE = 11;
-
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function now() { return performance.now(); }
-
-  function spawnParticle(emoji, x, y, dx) {
-    var p = document.createElement('div');
-    p.className = 'particle' + (emoji === 'zzz' ? ' zzz' : '');
-    p.style.left = x + 'px';
-    p.style.top = y + 'px';
-    p.style.setProperty('--dx', (dx || 0) + 'px');
-    p.textContent = emoji === 'zzz' ? 'z' : emoji;
-    particlesEl.appendChild(p);
-    p.addEventListener('animationend', function () { p.remove(); });
-  }
-
-  function burstHearts(cx, cy) {
-    for (var i = 0; i < 5; i++) {
-      (function (i) {
-        setTimeout(function () { spawnParticle('💗', cx + (Math.random() * 50 - 25), cy - 20, (Math.random() * 40 - 20)); }, i * 90);
-      })(i);
-    }
-  }
-
-  function burstSparkles(cx, cy) {
-    for (var i = 0; i < 3; i++) {
-      (function (i) {
-        setTimeout(function () { spawnParticle('✨', cx + (Math.random() * 60 - 30), cy - 10, (Math.random() * 50 - 25)); }, i * 70);
-      })(i);
-    }
-  }
-
-  var win = { w: window.innerWidth, h: window.innerHeight };
-  var half = 150;
-  function recalc() {
-    win.w = window.innerWidth;
-    win.h = window.innerHeight;
-    var r = wrap.getBoundingClientRect();
-    half = (r.width || 300) / 2;
-    floorY = win.h * 0.78;
-  }
-  var floorY = win.h * 0.78;
-
-  var creature = { x: win.w / 2, y: floorY, targetX: win.w / 2, walking: false };
-  var cursor = { x: win.w / 2, y: win.h * 0.3, lastX: win.w / 2, lastY: win.h * 0.3, speed: 0, lastMoveTime: now() };
-  var lastActivity = now();
-  var suppressNextClick = false;
-
-  var jumpOffset = 0, jumpVel = 0;
-  var GRAVITY = 2600;
-  var onGround = true;
-
-  function triggerJump(power) {
-    if (!onGround) return;
-    jumpVel = -(power || 620);
-    onGround = false;
-    play8BitSound('jump');
-  }
-
-  var squashX = 1, squashY = 1, targetSquashX = 1, targetSquashY = 1;
-  var spinAngle = 0;
-
-  var mode = 'idle';
-  var modeUntil = 0;
-  var selfPlayCooldownUntil = now() + 4000;
-
-  var expr = { browY: 0, browAngle: 0, mouthWidth: 26, mouthCurve: 14, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 };
-  var exprCur = { browY: 0, browAngle: 0, mouthWidth: 26, mouthCurve: 14, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 };
-
-  var MOODS = {
-    idle:     { browY: 0,   browAngle: 4,   mouthWidth: 24, mouthCurve: 12, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 },
-    curious:  { browY: -4,  browAngle: 12,  mouthWidth: 22, mouthCurve: 8,  smileOp: 1, oOp: 0, sleepOp: 0, blush: 0 },
-    happy:    { browY: -3,  browAngle: 6,   mouthWidth: 46, mouthCurve: 34, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.9 },
-    chase:    { browY: -5,  browAngle: 10,  mouthWidth: 40, mouthCurve: 26, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.4 },
-    startled: { browY: -10, browAngle: -4,  mouthWidth: 12, mouthCurve: 4,  smileOp: 0, oOp: 1, sleepOp: 0, blush: 0 },
-    sleep:    { browY: 4,   browAngle: 2,   mouthWidth: 20, mouthCurve: 6,  smileOp: 0, oOp: 0, sleepOp: 1, blush: 0.15 },
-    dizzy:    { browY: -2,  browAngle: 16,  mouthWidth: 36, mouthCurve: 24, smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.5 },
-    drag:     { browY: -6,  browAngle: -10, mouthWidth: 16, mouthCurve: 4,  smileOp: 1, oOp: 0, sleepOp: 0, blush: 0.2 }
+  const speedSettings = {
+    1: { name: 'Slow', speed: 0.5 },
+    2: { name: 'Relaxed', speed: 0.75 },
+    3: { name: 'Normal', speed: 1.0 },
+    4: { name: 'Fast', speed: 1.6 },
+    5: { name: 'Turbo', speed: 2.5 }
   };
 
-  var startledUntil = 0;
+  function updateTypewriter(){
+    clearTimeout(typingTimeout);
+    const fullText = currentTargetText || '';
 
-  function setMoodTarget(name) {
-    var m = MOODS[name] || MOODS.idle;
-    expr.browY = m.browY; expr.browAngle = m.browAngle;
-    expr.mouthWidth = m.mouthWidth; expr.mouthCurve = m.mouthCurve;
-    expr.smileOp = m.smileOp; expr.oOp = m.oOp; expr.sleepOp = m.sleepOp;
-    expr.blush = m.blush;
-  }
-
-  // Ball
-  var ball = { active: false, x: 0, y: 0, vx: 0, vy: 0, r: 21, hits: 0, wobble: 0, wobbleVel: 0, wobbleAxis: 'v' };
-  var BALL_GRAVITY = 1500;
-  var WOBBLE_SPRING = 140, WOBBLE_DAMPING = 0.90;
-
-  function kickJelly(strength, axis) { ball.wobbleAxis = axis; ball.wobbleVel += strength; }
-
-  function spawnBall(x, y) {
-    ball.active = true;
-    ball.x = x; ball.y = y;
-    ball.vx = (Math.random() * 120 - 60);
-    ball.vy = -200;
-    ball.hits = 0;
-    ball.wobble = 0; ball.wobbleVel = 0;
-    ballEl.style.opacity = '1';
-    play8BitSound('bounce');
-  }
-
-  function despawnBall() { ball.active = false; ballEl.style.opacity = '0'; }
-
-  function updateBall(dt, timeNow) {
-    if (!ball.active) return;
-    ball.vy += BALL_GRAVITY * dt;
-    ball.x += ball.vx * dt;
-    ball.y += ball.vy * dt;
-    var groundY = floorY + half * 0.35;
-    if (ball.y > groundY) {
-      ball.y = groundY;
-      var impact = Math.abs(ball.vy);
-      ball.vy *= -0.52;
-      ball.vx *= 0.8;
-      if (Math.abs(ball.vy) < 40) ball.vy = 0;
-      kickJelly(clamp(impact / 260, 0.3, 1.6), 'v');
-      play8BitSound('bounce');
-    }
-    if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.6; kickJelly(clamp(Math.abs(ball.vx) / 220, 0.25, 1.3), 'h'); play8BitSound('bounce'); }
-    if (ball.x > win.w - ball.r) { ball.x = win.w - ball.r; ball.vx *= -0.6; kickJelly(clamp(Math.abs(ball.vx) / 220, 0.25, 1.3), 'h'); play8BitSound('bounce'); }
-
-    ball.wobbleVel += -WOBBLE_SPRING * ball.wobble * dt;
-    ball.wobble += ball.wobbleVel * dt;
-    ball.wobbleVel *= Math.pow(WOBBLE_DAMPING, dt * 60);
-
-    var amt = clamp(ball.wobble, -0.9, 0.9) + Math.sin(timeNow / 240) * 0.035;
-    var sx, sy;
-    if (ball.wobbleAxis === 'v') { sx = 1 + amt * 0.5; sy = 1 - amt * 0.5; }
-    else { sx = 1 - amt * 0.5; sy = 1 + amt * 0.5; }
-
-    ballEl.style.transform = 'translate(' + (ball.x - ball.r) + 'px,' + (ball.y - ball.r) + 'px)';
-    jellyGroup.setAttribute('transform', 'translate(50,50) scale(' + sx + ',' + sy + ') translate(-50,-50)');
-  }
-
-  var SELF_PLAY_DELAY = 5500;
-  var SLEEP_DELAY = 19000;
-  var nextIdleWanderAt = now() + 3000 + Math.random() * 3000;
-
-  function wakeUp() {
-    if (mode === 'sleep') {
-      startledUntil = now() + 260;
-      triggerJump(420);
-      burstSparkles(creature.x, creature.y - half * 0.6);
-    }
-    mode = 'idle';
-    despawnBall();
-  }
-
-  function registerActivity() {
-    lastActivity = now();
-    if (mode === 'sleep' || mode === 'tailspin' || (mode === 'chase')) {
-      wakeUp();
-    }
-  }
-
-  function maybeStartSelfPlay() {
-    if (now() < selfPlayCooldownUntil) return;
-    if (Math.random() < 0.5) {
-      mode = 'tailspin';
-      modeUntil = now() + 1800 + Math.random() * 900;
-      spinAngle = 0;
+    if(!isDeleting){
+      if(typedChars < fullText.length){
+        typedChars++;
+        greetTextEl.textContent = fullText.slice(0, typedChars);
+        const charDelay = (80 + Math.random() * 25) / typeSpeedMultiplier;
+        typingTimeout = setTimeout(updateTypewriter, charDelay);
+      } else {
+        const pauseDelay = 2200 / typeSpeedMultiplier;
+        isDeleting = true;
+        typingTimeout = setTimeout(updateTypewriter, pauseDelay);
+      }
     } else {
-      mode = 'chase';
-      spawnBall(creature.x + (Math.random() * 160 - 80), floorY - 260);
+      if(typedChars > 0){
+        typedChars--;
+        greetTextEl.textContent = fullText.slice(0, typedChars);
+        const deleteDelay = 40 / typeSpeedMultiplier;
+        typingTimeout = setTimeout(updateTypewriter, deleteDelay);
+      } else {
+        isDeleting = false;
+        const startDelay = 500 / typeSpeedMultiplier;
+        typingTimeout = setTimeout(updateTypewriter, startDelay);
+      }
     }
   }
 
-  window.addEventListener('mousemove', function (e) {
-    var dx = e.clientX - cursor.lastX, dy = e.clientY - cursor.lastY;
-    var dt = Math.max(1, now() - cursor.lastMoveTime);
-    cursor.speed = Math.sqrt(dx * dx + dy * dy) / dt * 1000;
-    cursor.x = e.clientX; cursor.y = e.clientY;
-    cursor.lastX = e.clientX; cursor.lastY = e.clientY;
-    cursor.lastMoveTime = now();
-
-    if (Math.abs(dx) + Math.abs(dy) > 4) registerActivity();
-
-    var dist = Math.hypot(e.clientX - creature.x, e.clientY - (creature.y - half * 0.3));
-    if (cursor.speed > 1400 && dist < 220 && mode !== 'sleep') {
-      startledUntil = now() + 380;
+  function setGreetingTarget(text){
+    if(currentTargetText === text && typingTimeout) return;
+    currentTargetText = text;
+    if(typedChars > text.length || !text.startsWith(currentTargetText.slice(0, typedChars))){
+      isDeleting = true;
     }
-  }, { passive: true });
+    updateTypewriter();
+  }
 
-  window.addEventListener('touchmove', function (e) {
-    if (e.touches && e.touches[0]) {
-      cursor.x = e.touches[0].clientX;
-      cursor.y = e.touches[0].clientY;
-      registerActivity();
+  function periodForHour(h){
+    if(h>=5 && h<11) return 'morning';
+    if(h>=11 && h<17) return 'afternoon';
+    if(h>=17 && h<20) return 'evening';
+    return 'night';
+  }
+
+  function applyPeriod(p){
+    body.setAttribute('data-period', p);
+    Object.values(skies).forEach(id=>document.getElementById(id).classList.remove('active'));
+    document.getElementById(skies[p]).classList.add('active');
+    if(!customGreeting){
+      const g = { morning:['Good morning','Take it slow today.'],
+                  afternoon:['Good afternoon','A calm moment, right here.'],
+                  evening:['Good evening','The sky is putting on a show.'],
+                  night:['Good night','Rest easy.'] }[p];
+      setGreetingTarget(g[0]);
+      document.getElementById('greet-sub').textContent = g[1];
     }
-  }, { passive: true });
+  }
 
-  var dragging = false, dragMoved = false, dragStartX = 0, dragStartY = 0;
-  var dragVX = 0, dragVY = 0, dragPrevX = 0, dragPrevY = 0, dragPrevT = 0;
+  function tick(){
+    const p = mode==='auto' ? periodForHour(new Date().getHours()) : mode;
+    applyPeriod(p);
+  }
+  tick();
+  setInterval(tick, 60000);
 
-  wrap.addEventListener('pointerdown', function (e) {
-    dragging = true; dragMoved = false;
-    dragStartX = e.clientX; dragStartY = e.clientY;
-    dragPrevX = e.clientX; dragPrevY = e.clientY; dragPrevT = now();
-    wrap.setPointerCapture(e.pointerId);
-    wrap.classList.add('dragging');
-    registerActivity();
-    despawnBall();
-    mode = 'drag';
-    onGround = false; jumpVel = 0; jumpOffset = 0;
+  document.getElementById('time-select').addEventListener('change', e=>{
+    mode = e.target.value;
+    tick();
   });
 
-  window.addEventListener('pointermove', function (e) {
-    if (!dragging) return;
-    var d = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
-    if (d > 6) dragMoved = true;
-    creature.x = e.clientX;
-    creature.y = e.clientY;
-    var t = now();
-    var dt = Math.max(1, t - dragPrevT);
-    dragVX = (e.clientX - dragPrevX) / dt * 16;
-    dragVY = (e.clientY - dragPrevY) / dt * 16;
-    dragPrevX = e.clientX; dragPrevY = e.clientY; dragPrevT = t;
-  });
-
-  window.addEventListener('pointerup', function (e) {
-    if (!dragging) return;
-    dragging = false;
-    wrap.classList.remove('dragging');
-    if (!dragMoved) {
-      mode = 'happy';
-      modeUntil = now() + 1100;
-      triggerJump(360);
-      burstHearts(creature.x, creature.y - half * 0.6);
-      play8BitSound('pet');
-      creature.y = floorY;
-      onGround = true;
+  document.getElementById('greet-input').addEventListener('input', e=>{
+    const val = e.target.value.trim();
+    if(val.length){
+      customGreeting = true;
+      setGreetingTarget(val);
     } else {
-      jumpVel = clamp(dragVY * 6, -900, 900);
-      onGround = false;
-      creature.targetX = clamp(creature.x + dragVX * 4, half, win.w - half);
-      mode = 'idle';
-      suppressNextClick = true;
+      customGreeting = false;
+      tick();
     }
   });
 
-  window.addEventListener('click', function (e) {
-    if (suppressNextClick) { suppressNextClick = false; return; }
-    if (wrap.contains(e.target) || e.target.closest('#gearWidget') || e.target.closest('#modalBackdrop')) return;
-    registerActivity();
-    mode = 'chase';
-    spawnBall(e.clientX, Math.min(e.clientY, floorY - 40));
+  // Typing speed slider
+  const speedSlider = document.getElementById('speed-slider');
+  const speedLabel = document.getElementById('speed-label');
+  speedSlider.addEventListener('input', e=>{
+    const level = parseInt(e.target.value, 10);
+    const config = speedSettings[level] || speedSettings[3];
+    typeSpeedMultiplier = config.speed;
+    speedLabel.textContent = config.name;
+    updateTypewriter();
   });
 
-  window.addEventListener('dblclick', function (e) {
-    if (e.target.closest('#gearWidget') || e.target.closest('#modalBackdrop')) return;
-    registerActivity();
-    startledUntil = now() + 420;
-    triggerJump(760);
-    despawnBall();
-    mode = 'idle';
-  });
+  // ---------- FONT SIZE STEPPER CONTROLS ----------
+  let titleFontSize = 36;
+  let subFontSize = 15;
+  const titleValEl = document.getElementById('title-size-val');
+  const subValEl = document.getElementById('sub-size-val');
 
-  window.addEventListener('resize', recalc);
-  recalc();
-
-  var lastT = now();
-
-  function frame(t) {
-    var dt = Math.min(0.05, (t - lastT) / 1000);
-    lastT = t;
-    var timeNow = t;
-
-    var idleTime = timeNow - lastActivity;
-    if (mode === 'idle' && idleTime > SELF_PLAY_DELAY) {
-      maybeStartSelfPlay();
-      selfPlayCooldownUntil = timeNow + 6000;
-    }
-    if (mode !== 'sleep' && mode !== 'drag' && idleTime > SLEEP_DELAY) {
-      mode = 'sleep';
-      despawnBall();
-    }
-    if (mode === 'tailspin' && timeNow > modeUntil) { mode = 'idle'; }
-    if (mode === 'happy' && timeNow > modeUntil) { mode = 'idle'; }
-
-    if (mode === 'drag') {
-    } else if (mode === 'chase' && ball.active) {
-      creature.targetX = clamp(ball.x, half, win.w - half);
-    } else if (mode === 'tailspin') {
-      creature.targetX = creature.x;
-    } else if (mode === 'idle') {
-      if (timeNow > nextIdleWanderAt) {
-        creature.targetX = clamp(creature.x + (Math.random() * 260 - 130), half, win.w - half);
-        nextIdleWanderAt = timeNow + 5000 + Math.random() * 6000;
-      }
-    } else if (mode === 'sleep') {
-      creature.targetX = creature.x;
-    }
-
-    if (mode !== 'drag') {
-      var dxWalk = creature.targetX - creature.x;
-      creature.walking = Math.abs(dxWalk) > 2;
-      creature.x += dxWalk * clamp(dt * 3, 0, 1);
-      creature.y = floorY;
-    }
-    creature.x = clamp(creature.x, half, win.w - half);
-
-    if (!onGround) {
-      jumpVel += GRAVITY * dt;
-      jumpOffset += jumpVel * dt;
-      if (jumpOffset >= 0 && mode !== 'drag') {
-        jumpOffset = 0; jumpVel = 0; onGround = true;
-        targetSquashX = 1.18; targetSquashY = 0.82;
-      }
-    }
-    if (mode === 'idle' && onGround && Math.random() < 0.0032) {
-      triggerJump(480 + Math.random() * 160);
-    }
-    if (mode === 'chase' && ball.active && onGround) {
-      var d2ball = Math.hypot(ball.x - creature.x, ball.y - (creature.y - half * 0.5));
-      if (d2ball < 70 && ball.y > floorY - half * 0.9) {
-        triggerJump(520);
-        ball.vy = -(520 + Math.random() * 200);
-        ball.vx = clamp(ball.vx + (Math.random() * 200 - 100), -260, 260);
-        ball.hits++;
-        kickJelly(1.3, 'v');
-        burstSparkles(ball.x, ball.y);
-        if (ball.hits > 5) { despawnBall(); mode = 'idle'; }
-      }
-    }
-
-    if (!onGround) {
-      targetSquashX = 0.9; targetSquashY = 1.14;
-    } else if (mode !== 'happy') {
-      targetSquashX = lerp(targetSquashX, 1, 0.12);
-      targetSquashY = lerp(targetSquashY, 1, 0.12);
-    }
-    squashX = lerp(squashX, targetSquashX, 0.25);
-    squashY = lerp(squashY, targetSquashY, 0.25);
-    targetSquashX = lerp(targetSquashX, 1, 0.06);
-    targetSquashY = lerp(targetSquashY, 1, 0.06);
-
-    var breathe = (onGround && mode !== 'sleep') ? Math.sin(timeNow / 620) * 0.015 : 0;
-    var breatheSleep = (mode === 'sleep') ? Math.sin(timeNow / 900) * 0.02 : 0;
-    var walkBob = creature.walking && onGround ? Math.abs(Math.sin(timeNow / 90)) * 6 : 0;
-
-    if (mode === 'tailspin') {
-      spinAngle += dt * 900;
-      if (Math.floor(spinAngle / 360) !== Math.floor((spinAngle - dt * 900) / 360)) {
-        burstSparkles(creature.x, creature.y - half * 0.7);
-      }
-    } else {
-      spinAngle = lerp(spinAngle % 360, 0, 0.1);
-    }
-
-    var startled = timeNow < startledUntil;
-    if (startled) { setMoodTarget('startled'); }
-    else if (mode === 'sleep') { setMoodTarget('sleep'); }
-    else if (mode === 'happy') { setMoodTarget('happy'); }
-    else if (mode === 'chase') { setMoodTarget('chase'); }
-    else if (mode === 'tailspin') { setMoodTarget('dizzy'); }
-    else if (mode === 'drag') { setMoodTarget('drag'); }
-    else {
-      var sinceMove = timeNow - cursor.lastMoveTime;
-      setMoodTarget(sinceMove < 900 ? 'curious' : 'idle');
-    }
-
-    var lookX, lookY;
-    var eyeOriginX = creature.x;
-    var eyeOriginY = creature.y - half * 0.55 + jumpOffset;
-    if (mode === 'chase' && ball.active) {
-      var bdx = ball.x - eyeOriginX, bdy = ball.y - eyeOriginY;
-      var bdist = Math.hypot(bdx, bdy);
-      var bang = Math.atan2(bdy, bdx);
-      var br = Math.min(PUPIL_RANGE, PUPIL_RANGE * (bdist / 140));
-      lookX = Math.cos(bang) * br; lookY = Math.sin(bang) * br * 0.85;
-    } else if (mode === 'tailspin' || mode === 'sleep' || mode === 'drag') {
-      lookX = 0; lookY = 2;
-    } else {
-      var cdx = cursor.x - eyeOriginX, cdy = cursor.y - eyeOriginY;
-      var cdist = Math.hypot(cdx, cdy);
-      var cang = Math.atan2(cdy, cdx);
-      var cr = Math.min(PUPIL_RANGE, PUPIL_RANGE * (cdist / 200));
-      lookX = Math.cos(cang) * cr; lookY = Math.sin(cang) * cr * 0.85;
-    }
-
-    lpx = lerp(lpx, lookX, 0.18);
-    lpy = lerp(lpy, lookY, 0.18);
-    rpx = lerp(rpx, lookX, 0.18);
-    rpy = lerp(rpy, lookY, 0.18);
-
-    if (mode !== 'sleep') {
-      if (!blinking && timeNow > nextBlinkAt) { blinking = true; blinkStart = timeNow; }
-      if (blinking) {
-        var bp = (timeNow - blinkStart) / BLINK_DUR;
-        if (bp < 1) { blinkT = Math.sin(bp * Math.PI); }
-        else { blinkT = 0; blinking = false; nextBlinkAt = timeNow + 2200 + Math.random() * 3200; }
-      }
-    } else {
-      blinkT = lerp(blinkT, 0.92, 0.15);
-    }
-
-    var scleraScaleY = startled ? Math.max(0.06, (1 - blinkT)) * 1.18 : Math.max(0.06, 1 - blinkT);
-    scleraScaleY = clamp(scleraScaleY, 0.06, 1.25);
-
-    exprCur.browY = lerp(exprCur.browY, expr.browY, 0.12);
-    exprCur.browAngle = lerp(exprCur.browAngle, expr.browAngle, 0.12);
-    exprCur.mouthWidth = lerp(exprCur.mouthWidth, expr.mouthWidth, 0.14);
-    exprCur.mouthCurve = lerp(exprCur.mouthCurve, expr.mouthCurve, 0.14);
-    exprCur.smileOp = lerp(exprCur.smileOp, expr.smileOp, 0.15);
-    exprCur.oOp = lerp(exprCur.oOp, expr.oOp, 0.2);
-    exprCur.sleepOp = lerp(exprCur.sleepOp, expr.sleepOp, 0.12);
-    exprCur.blush = lerp(exprCur.blush, expr.blush, 0.1);
-
-    var bodySquishX = 1 + breathe + breatheSleep;
-    var bodySquishY = 1 - breathe - breatheSleep * 0.6;
-    var w = 130 * bodySquishX, h = 120 * bodySquishY;
-    var cx = 200, cy = 215;
-    var top = cy - h, bottom = cy + h * 1.05, left = cx - w, right = cx + w;
-    blobBody.setAttribute('d',
-      'M ' + cx + ' ' + top +
-      ' C ' + (cx + w * 0.72) + ' ' + top + ' ' + right + ' ' + (cy - h * 0.35) + ' ' + right + ' ' + (cy + h * 0.15) +
-      ' C ' + right + ' ' + (bottom - h * 0.15) + ' ' + (cx + w * 0.55) + ' ' + bottom + ' ' + cx + ' ' + bottom +
-      ' C ' + (cx - w * 0.55) + ' ' + bottom + ' ' + left + ' ' + (bottom - h * 0.15) + ' ' + left + ' ' + (cy + h * 0.15) +
-      ' C ' + left + ' ' + (cy - h * 0.35) + ' ' + (cx - w * 0.72) + ' ' + top + ' ' + cx + ' ' + top + ' Z'
-    );
-
-    leftEyeGroup.setAttribute('transform', 'translate(' + EYE_L.x + ',' + EYE_L.y + ') scale(1,' + scleraScaleY + ')');
-    rightEyeGroup.setAttribute('transform', 'translate(' + EYE_R.x + ',' + EYE_R.y + ') scale(1,' + scleraScaleY + ')');
-    leftPupil.setAttribute('cx', lpx); leftPupil.setAttribute('cy', lpy);
-    rightPupil.setAttribute('cx', rpx); rightPupil.setAttribute('cy', rpy);
-    leftShine.setAttribute('cx', lpx - 5); leftShine.setAttribute('cy', lpy - 6);
-    rightShine.setAttribute('cx', rpx - 5); rightShine.setAttribute('cy', rpy - 6);
-    var pupilVisible = scleraScaleY > 0.22 ? 1 : 0;
-    leftPupil.style.opacity = rightPupil.style.opacity = leftShine.style.opacity = rightShine.style.opacity = pupilVisible;
-
-    browL.setAttribute('transform', 'translate(' + EYE_L.x + ',' + (EYE_L.y - 46 + exprCur.browY) + ') rotate(' + (-exprCur.browAngle) + ')');
-    browR.setAttribute('transform', 'translate(' + EYE_R.x + ',' + (EYE_R.y - 46 + exprCur.browY) + ') rotate(' + (exprCur.browAngle) + ')');
-
-    var my = 258;
-    mouthSmile.setAttribute('d', 'M ' + (200 - exprCur.mouthWidth) + ' ' + my + ' Q 200 ' + (my + exprCur.mouthCurve) + ' ' + (200 + exprCur.mouthWidth) + ' ' + my);
-    mouthSmile.style.opacity = exprCur.smileOp;
-    mouthO.style.opacity = exprCur.oOp;
-    mouthSleep.style.opacity = exprCur.sleepOp;
-
-    leftCheek.style.opacity = exprCur.blush * 0.7;
-    rightCheek.style.opacity = exprCur.blush * 0.7;
-
-    if (mode === 'sleep' && Math.random() < 0.01) {
-      spawnParticle('zzz', creature.x + half * 0.5, creature.y - half * 1.1, 10);
-    }
-
-    var totalY = jumpOffset + walkBob * -1;
-    wrap.style.left = (creature.x - half) + 'px';
-    wrap.style.top = (creature.y - half + totalY) + 'px';
-    squashGroup.setAttribute('transform',
-      'translate(200,300) scale(' + squashX + ',' + squashY + ') rotate(' + spinAngle + ') translate(-200,-300)'
-    );
-
-    var airAmount = clamp(-jumpOffset / 140, 0, 1);
-    shadow.setAttribute('opacity', 0.25 * (1 - airAmount * 0.8));
-    shadow.setAttribute('rx', 110 * (1 - airAmount * 0.3));
-
-    updateBall(dt, timeNow);
-
-    requestAnimationFrame(frame);
+  function updateFontSizes(){
+    document.documentElement.style.setProperty('--title-font-size', titleFontSize + 'px');
+    document.documentElement.style.setProperty('--sub-font-size', subFontSize + 'px');
+    titleValEl.textContent = titleFontSize + 'px';
+    subValEl.textContent = subFontSize + 'px';
   }
 
-  var lpx = 0, lpy = 0, rpx = 0, rpy = 0;
-  var blinkT = 0, blinking = false, blinkStart = 0, nextBlinkAt = now() + 1500 + Math.random() * 2500;
-  var BLINK_DUR = 160;
+  document.getElementById('title-size-down').addEventListener('click', ()=>{
+    titleFontSize = Math.max(16, titleFontSize - 2);
+    updateFontSizes();
+  });
+  document.getElementById('title-size-up').addEventListener('click', ()=>{
+    titleFontSize = Math.min(64, titleFontSize + 2);
+    updateFontSizes();
+  });
+  document.getElementById('sub-size-down').addEventListener('click', ()=>{
+    subFontSize = Math.max(10, subFontSize - 1);
+    updateFontSizes();
+  });
+  document.getElementById('sub-size-up').addEventListener('click', ()=>{
+    subFontSize = Math.min(30, subFontSize + 1);
+    updateFontSizes();
+  });
+  updateFontSizes();
 
-  requestAnimationFrame(frame);
+  // stars
+  const starfield = document.getElementById('starfield');
+  for(let i=0;i<70;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*70+'%';
+    s.style.animationDelay = (Math.random()*3.5)+'s';
+    starfield.appendChild(s);
+  }
 
-  setTimeout(function () {
-    var hEl = document.getElementById('hint');
-    if (hEl) hEl.style.opacity = '0';
-  }, 7000);
+  // ---------- SETTINGS PANEL (HOVER EXPAND/COLLAPSE + CLICK TOGGLE) ----------
+  const settingsWrap = document.getElementById('settings-wrap');
+  const gear = document.getElementById('gear');
+  const panel = document.getElementById('panel');
+  let hoverCloseTimer = null;
+
+  function openPanel(){
+    clearTimeout(hoverCloseTimer);
+    panel.classList.add('open');
+    gear.classList.add('active');
+  }
+
+  function closePanel(){
+    clearTimeout(hoverCloseTimer);
+    panel.classList.remove('open');
+    gear.classList.remove('active');
+  }
+
+  settingsWrap.addEventListener('mouseenter', ()=>{
+    openPanel();
+  });
+
+  settingsWrap.addEventListener('mouseleave', ()=>{
+    hoverCloseTimer = setTimeout(()=>{
+      closePanel();
+    }, 280);
+  });
+
+  gear.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(panel.classList.contains('open')){
+      closePanel();
+    } else {
+      openPanel();
+    }
+  });
+
+  document.addEventListener('click', e=>{
+    if(!settingsWrap.contains(e.target)){
+      closePanel();
+    }
+  });
+
+  // clouds
+  function cloudSVG(){
+    return `<svg viewBox="0 0 200 100"><g class="cloud-puff">
+      <ellipse cx="60" cy="60" rx="45" ry="28"/>
+      <ellipse cx="110" cy="45" rx="55" ry="34"/>
+      <ellipse cx="155" cy="62" rx="38" ry="24"/>
+      </g></svg>`;
+  }
+  const cloudsEl = document.getElementById('clouds');
+  const cloudDefs = [
+    {w:22,x:8,y:12},{w:16,x:62,y:8},{w:26,x:36,y:20},{w:14,x:82,y:22},{w:18,x:14,y:30}
+  ];
+  cloudDefs.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className='cloud cloud-float';
+    el.style.width = c.w+'vmin'; el.style.height=(c.w*0.5)+'vmin';
+    el.style.left = c.x+'vw'; el.style.top = c.y+'vh';
+    el.style.animationDelay = (i*0.7)+'s';
+    el.innerHTML = cloudSVG();
+    cloudsEl.appendChild(el);
+    makeDraggable(el);
+  });
+  document.getElementById('cloud-toggle').addEventListener('click', function(){
+    this.classList.toggle('on');
+    cloudsEl.classList.toggle('hidden', !this.classList.contains('on'));
+  });
+
+  // generic drag helper
+  function makeDraggable(el){
+    let sx,sy,ox,oy,dragging=false;
+    el.addEventListener('pointerdown', e=>{
+      dragging=true; el.setPointerCapture(e.pointerId);
+      sx=e.clientX; sy=e.clientY;
+      ox=el.offsetLeft; oy=el.offsetTop;
+      el.style.animation='none';
+    });
+    el.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      el.style.left = (ox + (e.clientX-sx))+'px';
+      el.style.top = (oy + (e.clientY-sy))+'px';
+    });
+    el.addEventListener('pointerup', ()=>{ dragging=false; });
+  }
+
+  // ---------- FLOATING EMOTE SYSTEM ----------
+  function spawnEmote(x, y, icon){
+    const emote = document.createElement('div');
+    emote.className = 'floating-emote';
+    emote.textContent = icon;
+    emote.style.left = x + 'px';
+    emote.style.top = y + 'px';
+    emote.style.setProperty('--dx', (Math.random()*60 - 30) + 'px');
+    document.body.appendChild(emote);
+    setTimeout(()=> emote.remove(), 1400);
+  }
+
+  // ---------- CREATURE: PHYSICS + ACTIVITIES ----------
+  const creature = document.getElementById('creature');
+  const creatureBody = creature.querySelector('.creature-body');
+  const eyeL = creature.querySelector('.c-eye.left'), eyeR = creature.querySelector('.c-eye.right');
+  const blushL = creature.querySelector('.c-blush.left'), blushR = creature.querySelector('.c-blush.right');
+  const mouth = creature.querySelector('.c-mouth');
+
+  let cx = window.innerWidth*0.38, cy = window.innerHeight*0.56;
+  let vx=0, vy=0, dragging=false, lastX=0, lastY=0, lastT=0;
+  creature.style.left = cx+'px'; creature.style.top = cy+'px';
+  creature.style.position='fixed'; creature.style.transformOrigin='center';
+
+  function place(){ creature.style.left = cx+'px'; creature.style.top = cy+'px'; }
+  place();
+
+  let hasMovedFar = false;
+  let pointerStartX = 0, pointerStartY = 0;
+
+  creature.addEventListener('pointerdown', e=>{
+    dragging=true; creature.setPointerCapture(e.pointerId);
+    lastX=e.clientX; lastY=e.clientY; lastT=performance.now();
+    pointerStartX = e.clientX; pointerStartY = e.clientY;
+    hasMovedFar = false;
+    vx=0; vy=0;
+  });
+
+  creature.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    if(Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY) > 6){
+      hasMovedFar = true;
+    }
+    const now = performance.now(); const dt = Math.max(now-lastT,1);
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    vx = dx/dt*16; vy = dy/dt*16;
+    cx += dx; cy += dy;
+    lastX=e.clientX; lastY=e.clientY; lastT=now;
+    place();
+  });
+
+  window.addEventListener('pointerup', ()=>{ dragging=false; });
+
+  // Creature click activity (pat / poke)
+  creature.addEventListener('click', e=>{
+    if(hasMovedFar) return;
+    const rect = creature.getBoundingClientRect();
+    const midX = rect.left + rect.width/2, midY = rect.top + rect.height/2;
+
+    // Happy reaction
+    creatureBody.style.transform = 'scale(1.18, 0.82)';
+    [eyeL, eyeR].forEach(el => el.classList.add('happy'));
+    [blushL, blushR].forEach(el => el.classList.add('extra'));
+    mouth.classList.add('open');
+
+    const icons = ['✨', '💖', '⭐', '🌸', '💫'];
+    spawnEmote(midX, midY - 20, icons[Math.floor(Math.random()*icons.length)]);
+
+    setTimeout(()=>{
+      creatureBody.style.transform = '';
+      [eyeL, eyeR].forEach(el => el.classList.remove('happy'));
+      [blushL, blushR].forEach(el => el.classList.remove('extra'));
+      mouth.classList.remove('open');
+    }, 450);
+  });
+
+  // Creature double-click activity (excited flip jump)
+  creature.addEventListener('dblclick', ()=>{
+    creature.classList.add('creature-flip');
+    const rect = creature.getBoundingClientRect();
+    spawnEmote(rect.left + rect.width/2, rect.top, '🎉');
+    setTimeout(()=> creature.classList.remove('creature-flip'), 720);
+  });
+
+  // Creature autonomous idle activities
+  function triggerCreatureIdle(){
+    if(dragging) return;
+    const activities = ['wiggle', 'look', 'blink', 'emote'];
+    const act = activities[Math.floor(Math.random()*activities.length)];
+    const rect = creature.getBoundingClientRect();
+
+    if(act === 'wiggle'){
+      creature.classList.add('creature-wiggle');
+      setTimeout(()=> creature.classList.remove('creature-wiggle'), 800);
+    } else if(act === 'look'){
+      const glanceX = (Math.random() - 0.5) * 14;
+      const glanceY = (Math.random() - 0.5) * 10;
+      [eyeL, eyeR].forEach(eye => { eye.style.transform = `translate(${glanceX}px,${glanceY}px)`; });
+      setTimeout(()=>{ [eyeL, eyeR].forEach(eye => { eye.style.transform = ''; }); }, 1400);
+    } else if(act === 'emote'){
+      const p = body.getAttribute('data-period');
+      const icon = (p === 'night' || p === 'evening') ? '💤' : '✨';
+      spawnEmote(rect.left + rect.width/2, rect.top + 10, icon);
+    }
+  }
+  setInterval(triggerCreatureIdle, 7500);
+
+  // Eye tracking cursor
+  window.addEventListener('pointermove', e=>{
+    if(dragging) return;
+    const rect = creature.getBoundingClientRect();
+    const cxp = rect.left+rect.width/2, cyp = rect.top+rect.height/2;
+    const ang = Math.atan2(e.clientY-cyp, e.clientX-cxp);
+    const dist = Math.min(2.5, Math.hypot(e.clientX-cxp,e.clientY-cyp)/180);
+    const ox = Math.cos(ang)*dist, oy = Math.sin(ang)*dist;
+    [eyeL,eyeR].forEach(eye=>{ eye.style.transform = `translate(${ox}px,${oy}px)`; });
+  });
+
+  function physics(){
+    if(!dragging){
+      const damping = 0.94;
+      cx += vx; cy += vy; vx*=damping; vy*=damping;
+      const r = creature.getBoundingClientRect();
+      const w = r.width, h = r.height;
+      const minX=0, maxX=window.innerWidth-w, minY=window.innerHeight*0.15, maxY=window.innerHeight-h;
+      if(cx<minX){cx=minX;vx*=-0.5;} if(cx>maxX){cx=maxX;vx*=-0.5;}
+      if(cy<minY){cy=minY;vy*=-0.5;} if(cy>maxY){cy=maxY;vy*=-0.5;}
+      place();
+    }
+    requestAnimationFrame(physics);
+  }
+  requestAnimationFrame(physics);
+
+  // creature size slider
+  document.getElementById('creature-size').addEventListener('input', e=>{
+    document.documentElement.style.setProperty('--creature-scale', e.target.value);
+  });
+
+  // ---------- CAT: ACTIVITIES & INTERACTIONS ----------
+  const cat = document.getElementById('cat');
+  const catBody = cat.querySelector('.cat-body');
+  const catTail = cat.querySelector('.cat-tail');
+  const catEarL = cat.querySelector('.cat-ear.l'), catEarR = cat.querySelector('.cat-ear.r');
+  const catEyeL = cat.querySelector('.cat-eye.l'), catEyeR = cat.querySelector('.cat-eye.r');
+
+  function showCatBubble(text){
+    const existing = cat.querySelector('.cat-bubble');
+    if(existing) existing.remove();
+    const b = document.createElement('div');
+    b.className = 'cat-bubble';
+    b.textContent = text;
+    cat.appendChild(b);
+    setTimeout(()=> b.remove(), 1800);
+  }
+
+  // Pet the cat on click
+  cat.addEventListener('click', ()=>{
+    catBody.classList.add('cat-purr');
+    catTail.classList.add('excited');
+    [catEyeL, catEyeR].forEach(el => el.classList.add('happy'));
+
+    const rect = cat.getBoundingClientRect();
+    const emotes = ['🐾', '💖', '🎵', '🌸', '✨'];
+    spawnEmote(rect.left + rect.width/2, rect.top, emotes[Math.floor(Math.random()*emotes.length)]);
+    showCatBubble('purr~');
+
+    setTimeout(()=>{
+      catBody.classList.remove('cat-purr');
+      catTail.classList.remove('excited');
+      [catEyeL, catEyeR].forEach(el => el.classList.remove('happy'));
+    }, 1200);
+  });
+
+  // Cat double-click activity (pounce hop)
+  cat.addEventListener('dblclick', ()=>{
+    cat.classList.add('cat-pounce');
+    showCatBubble('mrrp!');
+    setTimeout(()=> cat.classList.remove('cat-pounce'), 700);
+  });
+
+  // Cat autonomous idle activities
+  function triggerCatIdle(){
+    const acts = ['meow', 'twitch', 'nap', 'tail'];
+    const act = acts[Math.floor(Math.random()*acts.length)];
+    const rect = cat.getBoundingClientRect();
+
+    if(act === 'meow'){
+      const meows = ['meow~', 'nya~', 'purr..', 'mrr?'];
+      showCatBubble(meows[Math.floor(Math.random()*meows.length)]);
+    } else if(act === 'twitch'){
+      if(Math.random() > 0.5){
+        catEarL.classList.add('ear-twitch-l');
+        setTimeout(()=> catEarL.classList.remove('ear-twitch-l'), 700);
+      } else {
+        catEarR.classList.add('ear-twitch-r');
+        setTimeout(()=> catEarR.classList.remove('ear-twitch-r'), 700);
+      }
+    } else if(act === 'tail'){
+      catTail.classList.add('excited');
+      setTimeout(()=> catTail.classList.remove('excited'), 1500);
+    } else if(act === 'nap'){
+      const p = body.getAttribute('data-period');
+      if(p === 'night' || p === 'evening'){
+        spawnEmote(rect.left + rect.width/2, rect.top + 10, '💤');
+      } else {
+        spawnEmote(rect.left + rect.width/2, rect.top + 10, '🎵');
+      }
+    }
+  }
+  setInterval(triggerCatIdle, 6500);
 })();
 </script>
 </body>
