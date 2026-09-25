@@ -1,0 +1,97 @@
+{
+  "timeMode": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Time of Day",
+    "options": [
+      "Auto",
+      "Morning",
+      "Afternoon",
+      "Evening",
+      "Night"
+    ]
+  },
+  "fontStyle": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Typography Style",
+    "options": [
+      "Glassy (Apple Lock)",
+      "Solid / Normal"
+    ]
+  },
+  "textOpacity": {
+    "type": "slider",
+    "value": 95,
+    "min": 25,
+    "max": 100,
+    "step": 5,
+    "text": "Text Opacity (%)"
+  },
+  "clockTimeSize": {
+    "type": "slider",
+    "value": 72,
+    "min": 32,
+    "max": 120,
+    "step": 2,
+    "text": "Clock Time Size (px)"
+  },
+  "clockDateSize": {
+    "type": "slider",
+    "value": 14,
+    "min": 10,
+    "max": 26,
+    "step": 1,
+    "text": "Clock Date Size (px)"
+  },
+  "titleFontSize": {
+    "type": "slider",
+    "value": 28,
+    "min": 16,
+    "max": 56,
+    "step": 2,
+    "text": "Greeting Title Size (px)"
+  },
+  "subFontSize": {
+    "type": "slider",
+    "value": 14,
+    "min": 10,
+    "max": 26,
+    "step": 1,
+    "text": "Greeting Subtitle Size (px)"
+  },
+  "typeSpeed": {
+    "type": "dropdown",
+    "value": 2,
+    "text": "Typing Speed",
+    "options": [
+      "Slow",
+      "Relaxed",
+      "Normal",
+      "Fast",
+      "Turbo"
+    ]
+  },
+  "customGreeting": {
+    "type": "textbox",
+    "value": "",
+    "text": "Custom Greeting Message"
+  },
+  "showClouds": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Show Clouds"
+  },
+  "creatureSize": {
+    "type": "slider",
+    "value": 100,
+    "min": 70,
+    "max": 140,
+    "step": 5,
+    "text": "Creature Size (%)"
+  },
+  "resetDefaults": {
+    "type": "button",
+    "text": "Reset All to Defaults"
+  }
+}
