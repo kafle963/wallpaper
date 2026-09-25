@@ -6,22 +6,25 @@
 <title>Drift — Interactive Wallpaper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Manrope, sans-serif;
-    --sky-a:#eaf5ff; --sky-b:#cfe9ff; --sun:#fff6d8; --ink:#22303f; --ink-soft:rgba(34,48,63,.55);
-    --glass:rgba(255,255,255,.55); --glass-border:rgba(255,255,255,.7); --shadow:rgba(30,40,60,.14);
+    --sky-a:#eaf5ff; --sky-b:#cfe9ff; --sun:#fff6d8; --ink:#162436; --ink-soft:rgba(22,36,54,.68);
+    --glass:rgba(255,255,255,.58); --glass-border:rgba(255,255,255,.75); --shadow:rgba(30,40,60,.14);
     --creature-scale:1; --cloud-opacity:1;
-    --title-font-size:clamp(24px,4.4vmin,46px);
-    --sub-font-size:clamp(12px,1.6vmin,16px);
+    --clock-time-size:72px;
+    --clock-date-size:14px;
+    --title-font-size:28px;
+    --sub-font-size:14px;
+    --text-opacity:0.95;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;margin:0;overflow:hidden;font-family:var(--font);user-select:none;-webkit-user-select:none;}
   body{position:relative;color:var(--ink);}
 
   /* ---------- SKY LAYERS ---------- */
-  .sky{position:fixed;inset:0;opacity:0;transition:opacity 2.2s ease;z-index:0;}
+  .sky{position:fixed;inset:0;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);z-index:0;pointer-events:none;}
   .sky.active{opacity:1;}
   #sky-morning{background:linear-gradient(180deg,#eaf6ff 0%,#dcefff 45%,#cfe9ff 100%);}
   #sky-afternoon{background:linear-gradient(180deg,#8fd0ff 0%,#bfe4ff 55%,#eaf7ff 100%);}
@@ -50,14 +53,14 @@
   #sky-evening .sun-glow{display:none;}
   #sky-night .sun-glow{display:none;}
 
-  .stars{position:absolute;inset:0;opacity:0;transition:opacity 2s ease;}
+  .stars{position:absolute;inset:0;opacity:0;transition:opacity 1.5s ease;}
   #sky-night .stars{opacity:1;}
   .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3.5s ease-in-out infinite;}
   @keyframes twinkle{0%,100%{opacity:.2;}50%{opacity:1;}}
 
   .moon{position:absolute;right:14%;top:16%;width:9vmin;height:9vmin;border-radius:50%;
     background:radial-gradient(circle at 35% 32%,#ffffff 0%,#eef2ff 55%,#dfe6ff 100%);
-    box-shadow:0 0 6vmin rgba(200,210,255,.35);opacity:0;transition:opacity 2s ease;}
+    box-shadow:0 0 6vmin rgba(200,210,255,.35);opacity:0;transition:opacity 1.5s ease;}
   #sky-night .moon{opacity:1;}
 
   .grain{position:fixed;inset:0;z-index:1;opacity:.035;pointer-events:none;mix-blend-mode:overlay;
@@ -66,8 +69,224 @@
   /* ---------- GROUND ---------- */
   .ground{position:fixed;left:0;right:0;bottom:0;height:16vh;z-index:2;
     background:linear-gradient(180deg,rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 100%);}
-  [data-period="night"] .ground{background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(10,14,30,.5) 100%);}
-  [data-period="evening"] .ground{background:linear-gradient(180deg,rgba(120,50,60,0) 0%, rgba(90,40,60,.4) 100%);}
+  body[data-period="night"] .ground{background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(10,14,30,.5) 100%);}
+  body[data-period="evening"] .ground{background:linear-gradient(180deg,rgba(120,50,60,0) 0%, rgba(90,40,60,.4) 100%);}
+
+  /* ---------- CENTER DISPLAY: DRAGGABLE APPLE LOCK SCREEN TIME, DATE & GREETING ---------- */
+  #center-display{
+    position:fixed;
+    top:4.5vh;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:6;
+    text-align:center;
+    pointer-events:auto;
+    cursor:grab;
+    touch-action:none;
+    width:auto;
+    min-width:280px;
+    max-width:94vw;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    opacity:var(--text-opacity);
+    transition:opacity .15s ease, filter .2s ease;
+    padding:6px 16px;
+    border-radius:22px;
+  }
+  #center-display:hover{
+    filter:drop-shadow(0 0 16px rgba(255,255,255,0.28));
+  }
+  #center-display:active{
+    cursor:grabbing;
+  }
+  #clock-date{
+    font-size:var(--clock-date-size);
+    font-weight:600;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    margin-bottom:2px;
+    transition:font-size .15s ease, color .3s ease;
+  }
+  #clock-time{
+    font-size:var(--clock-time-size);
+    font-weight:800;
+    letter-spacing:-0.035em;
+    line-height:0.95;
+    display:inline-flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:12px;
+    transition:font-size .15s ease, color .3s ease;
+  }
+  #clock-ampm{
+    font-size:0.3em;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  #greeting{
+    text-align:center;
+  }
+  #greeting h1{
+    margin:0;
+    font-size:var(--title-font-size);
+    font-weight:600;
+    letter-spacing:-.015em;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:1.25em;
+    transition:font-size .15s ease, color .3s ease;
+  }
+  .type-cursor{
+    display:inline-block;
+    width:2.5px;
+    height:0.92em;
+    background-color:currentColor;
+    margin-left:5px;
+    border-radius:1px;
+    animation:cursorBlink 0.9s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes cursorBlink{0%,100%{opacity:1;}50%{opacity:0;}}
+  #greeting p{
+    margin:4px 0 0;
+    font-size:var(--sub-font-size);
+    font-weight:500;
+    transition:color .3s ease, font-size .15s ease;
+  }
+
+  /* ---------- ADAPTIVE CONTRAST TYPOGRAPHY ---------- */
+  /* GLASSY (APPLE LOCK SCREEN FROSTED DEPTH GLOW) */
+  body.font-style-glassy #clock-time{
+    background:linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.68) 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 4px 18px rgba(0,0,0,0.45)) drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+  }
+  body.font-style-glassy[data-period="morning"] #clock-time,
+  body.font-style-glassy[data-period="afternoon"] #clock-time{
+    background:linear-gradient(180deg, #18283a 0%, #2f455d 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 14px rgba(255,255,255,0.85)) drop-shadow(0 1px 2px rgba(255,255,255,0.9));
+  }
+
+  body.font-style-glassy #clock-date{
+    background:linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.72) 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 10px rgba(0,0,0,0.4));
+  }
+  body.font-style-glassy[data-period="morning"] #clock-date,
+  body.font-style-glassy[data-period="afternoon"] #clock-date{
+    background:linear-gradient(180deg, #1c2e42 0%, #354d68 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 1px 6px rgba(255,255,255,0.8));
+  }
+
+  body.font-style-glassy #greeting h1{
+    background:linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.75) 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 3px 14px rgba(0,0,0,0.38));
+  }
+  body.font-style-glassy[data-period="morning"] #greeting h1,
+  body.font-style-glassy[data-period="afternoon"] #greeting h1{
+    background:linear-gradient(180deg, #18283a 0%, #2f455d 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 10px rgba(255,255,255,0.85));
+  }
+
+  body.font-style-glassy #greeting p{
+    background:linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.65) 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,0.32));
+  }
+  body.font-style-glassy[data-period="morning"] #greeting p,
+  body.font-style-glassy[data-period="afternoon"] #greeting p{
+    background:linear-gradient(180deg, #253b52 0%, #466280 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 1px 6px rgba(255,255,255,0.75));
+  }
+  body.font-style-glassy .type-cursor{
+    background-color:rgba(255,255,255,0.95);
+    box-shadow:0 0 8px rgba(255,255,255,0.8);
+  }
+  body.font-style-glassy[data-period="morning"] .type-cursor,
+  body.font-style-glassy[data-period="afternoon"] .type-cursor{
+    background-color:var(--ink);
+    box-shadow:0 0 6px rgba(255,255,255,0.6);
+  }
+
+  /* NORMAL OPTION (HIGH-CONTRAST SOLID — PURE WHITE AT NIGHT & SUNSET) */
+  body.font-style-normal #clock-time,
+  body.font-style-normal #clock-date,
+  body.font-style-normal #greeting h1,
+  body.font-style-normal #greeting p{
+    background:none !important;
+    -webkit-background-clip:initial !important;
+    -webkit-text-fill-color:initial !important;
+    filter:none !important;
+  }
+  
+  /* Morning & Afternoon: Dark Ink on light sky */
+  body.font-style-normal[data-period="morning"] #clock-time,
+  body.font-style-normal[data-period="afternoon"] #clock-time{
+    color:#122030 !important;
+    text-shadow:0 2px 14px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.8) !important;
+  }
+  body.font-style-normal[data-period="morning"] #clock-date,
+  body.font-style-normal[data-period="afternoon"] #clock-date{
+    color:#253b50 !important;
+    text-shadow:0 1px 8px rgba(255,255,255,0.8) !important;
+  }
+  body.font-style-normal[data-period="morning"] #greeting h1,
+  body.font-style-normal[data-period="afternoon"] #greeting h1{
+    color:#122030 !important;
+    text-shadow:0 2px 10px rgba(255,255,255,0.85) !important;
+  }
+  body.font-style-normal[data-period="morning"] #greeting p,
+  body.font-style-normal[data-period="afternoon"] #greeting p{
+    color:#253b50 !important;
+    text-shadow:0 1px 8px rgba(255,255,255,0.75) !important;
+  }
+  body.font-style-normal[data-period="morning"] .type-cursor,
+  body.font-style-normal[data-period="afternoon"] .type-cursor{
+    background-color:#122030 !important;
+  }
+
+  /* Night & Evening: Crisp Pure White on dark sky */
+  body.font-style-normal[data-period="night"] #clock-time,
+  body.font-style-normal[data-period="evening"] #clock-time{
+    color:#ffffff !important;
+    text-shadow:0 3px 22px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5) !important;
+  }
+  body.font-style-normal[data-period="night"] #clock-date,
+  body.font-style-normal[data-period="evening"] #clock-date{
+    color:rgba(255,255,255,0.95) !important;
+    text-shadow:0 2px 14px rgba(0,0,0,0.6) !important;
+  }
+  body.font-style-normal[data-period="night"] #greeting h1,
+  body.font-style-normal[data-period="evening"] #greeting h1{
+    color:#ffffff !important;
+    text-shadow:0 3px 18px rgba(0,0,0,0.65) !important;
+  }
+  body.font-style-normal[data-period="night"] #greeting p,
+  body.font-style-normal[data-period="evening"] #greeting p{
+    color:rgba(240,245,255,0.9) !important;
+    text-shadow:0 2px 12px rgba(0,0,0,0.6) !important;
+  }
+  body.font-style-normal[data-period="night"] .type-cursor,
+  body.font-style-normal[data-period="evening"] .type-cursor{
+    background-color:#ffffff !important;
+    box-shadow:0 0 8px rgba(255,255,255,0.85) !important;
+  }
 
   /* ---------- CLOUDS ---------- */
   #clouds{position:fixed;inset:0;z-index:3;pointer-events:none;transition:opacity .6s ease;}
@@ -77,8 +296,8 @@
   .cloud:active{cursor:grabbing;}
   .cloud svg{display:block;width:100%;height:100%;}
   .cloud-puff{fill:#ffffff;}
-  [data-period="evening"] .cloud-puff{fill:#ffe3d6;}
-  [data-period="night"] .cloud-puff{fill:#1c2547;}
+  body[data-period="evening"] .cloud-puff{fill:#ffe3d6;}
+  body[data-period="night"] .cloud-puff{fill:#1c2547;}
   .cloud-float{animation:cloudFloat 9s ease-in-out infinite;}
   @keyframes cloudFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-1.2vmin);}}
 
@@ -86,7 +305,7 @@
   #stage{position:fixed;inset:0;z-index:5;}
 
   /* creature */
-  #creature{position:absolute;width:26vmin;height:22vmin;left:38vw;top:56vh;
+  #creature{position:absolute;width:26vmin;height:22vmin;left:38vw;top:58vh;
     transform:translate(-50%,-50%) scale(var(--creature-scale));cursor:grab;touch-action:none;}
   #creature:active{cursor:grabbing;}
   .creature-body{width:100%;height:100%;background:#ffffff;
@@ -140,7 +359,7 @@
   .cat-whiskers{position:absolute;top:56%;width:26%;height:1px;background:rgba(90,90,100,.35);z-index:5;}
   .cat-whiskers.l{left:-20%;} .cat-whiskers.r{right:-20%;}
 
-  /* Creature & Cat activity animations */
+  /* Activities */
   .creature-wiggle{animation:creatureWiggle .75s ease-in-out !important;}
   @keyframes creatureWiggle{
     0%,100%{transform:rotate(0deg) scale(1);}
@@ -189,16 +408,6 @@
     100%{opacity:0;transform:translate(-50%,-16px) scale(0.85);}
   }
 
-  /* ---------- GREETING ---------- */
-  #greeting{position:fixed;top:9vh;left:50%;transform:translateX(-50%);z-index:6;text-align:center;pointer-events:none;width:90vw;max-width:850px;}
-  #greeting h1{margin:0;font-size:var(--title-font-size);font-weight:600;letter-spacing:-.01em;color:var(--ink);
-    display:inline-flex;align-items:center;justify-content:center;min-height:1.25em;transition:font-size .15s ease;}
-  .type-cursor{display:inline-block;width:2.5px;height:0.92em;background-color:currentColor;margin-left:5px;border-radius:1px;animation:cursorBlink 0.9s cubic-bezier(.4,0,.2,1) infinite;}
-  @keyframes cursorBlink{0%,100%{opacity:1;}50%{opacity:0;}}
-  #greeting p{margin:.4em 0 0;font-size:var(--sub-font-size);font-weight:500;color:var(--ink-soft);transition:color .3s ease, font-size .15s ease;}
-  [data-period="night"] #greeting h1,[data-period="night"] #greeting p{color:#eef1ff;}
-  [data-period="evening"] #greeting h1,[data-period="evening"] #greeting p{color:#fff3ea;}
-
   /* ---------- SETTINGS ---------- */
   #settings-wrap{position:fixed;top:3vh;right:3vh;z-index:10;display:flex;flex-direction:column;align-items:flex-end;}
   #gear{width:44px;height:44px;border-radius:50%;
@@ -209,61 +418,86 @@
   #gear:hover{transform:rotate(45deg) scale(1.06);}
   #gear.active{transform:rotate(90deg);}
   #gear svg{width:20px;height:20px;stroke:var(--ink);transition:transform .3s ease;}
-  [data-period="night"] #gear svg,[data-period="evening"] #gear svg{stroke:#fff;}
-  [data-period="night"] #gear,[data-period="evening"] #gear{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
+  body[data-period="night"] #gear svg,body[data-period="evening"] #gear svg{stroke:#fff;}
+  body[data-period="night"] #gear,body[data-period="evening"] #gear{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
 
-  #panel{position:absolute;top:54px;right:0;width:300px;max-width:86vw;max-height:82vh;overflow-y:auto;padding:20px;
-    background:var(--glass);border:1px solid var(--glass-border);backdrop-filter:blur(20px);
+  #panel{position:absolute;top:54px;right:0;width:320px;max-width:88vw;max-height:84vh;overflow-y:auto;padding:20px;
+    background:var(--glass);border:1px solid var(--glass-border);backdrop-filter:blur(22px);
     border-radius:20px;box-shadow:0 20px 50px var(--shadow);
     transform:translateY(-12px) scale(.95);opacity:0;pointer-events:none;
     transition:transform .28s cubic-bezier(.16,1,.3,1), opacity .25s ease;
     transform-origin:top right;}
   #panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto;}
   #panel h3{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--ink);}
-  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
-  .row label{font-size:13px;font-weight:500;color:var(--ink);}
-  select,input[type="text"]{font-family:var(--font);font-size:13px;padding:6px 10px;border-radius:10px;
-    border:1px solid rgba(34,48,63,.15);background:rgba(255,255,255,.8);color:var(--ink);outline:none;}
+  .section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin:14px 0 8px;}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+  .row label{font-size:12.5px;font-weight:500;color:var(--ink);}
+  input[type="text"]{font-family:var(--font);font-size:13px;padding:7px 11px;border-radius:10px;
+    border:1px solid rgba(34,48,63,.15);background:rgba(255,255,255,.8);color:var(--ink);outline:none;width:100%;}
   .switch{width:40px;height:24px;border-radius:20px;background:rgba(34,48,63,.18);position:relative;cursor:pointer;flex-shrink:0;}
   .switch.on{background:#5b8def;}
   .switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;
     box-shadow:0 2px 4px rgba(0,0,0,.2);transition:left .2s ease;}
   .switch.on::after{left:18px;}
   input[type="range"]{width:110px;cursor:pointer;}
-  .hint{font-size:11px;color:var(--ink-soft);margin-top:6px;line-height:1.4;}
+  .hint{font-size:11px;color:var(--ink-soft);margin-top:10px;line-height:1.4;}
 
-  /* Stepper controls for font size */
-  .stepper-wrap{display:flex;align-items:center;background:rgba(255,255,255,.6);border:1px solid rgba(34,48,63,.15);border-radius:10px;padding:2px;gap:2px;}
-  .step-btn{width:26px;height:26px;border:none;background:rgba(255,255,255,.85);color:var(--ink);border-radius:7px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;line-height:1;}
+  /* Time of Day & Style Pills */
+  .time-pills, .style-pills{display:flex;flex-wrap:wrap;gap:5px;width:100%;margin-bottom:4px;}
+  .time-pill, .style-pill{
+    flex:1 1 calc(33.33% - 5px);min-width:55px;padding:6px 2px;
+    font-size:11.5px;font-weight:600;font-family:var(--font);
+    background:rgba(255,255,255,.65);border:1px solid rgba(34,48,63,.14);
+    border-radius:9px;color:var(--ink);cursor:pointer;
+    transition:all .18s ease;text-align:center;user-select:none;
+  }
+  .style-pill{flex:1 1 calc(50% - 5px);padding:7px 4px;}
+  .time-pill:hover, .style-pill:hover{background:#fff;transform:translateY(-1px);}
+  .time-pill.active, .style-pill.active{background:#5b8def;color:#fff;border-color:#5b8def;box-shadow:0 3px 8px rgba(91,141,239,.35);}
+
+  /* Stepper controls */
+  .stepper-wrap{display:flex;align-items:center;background:rgba(255,255,255,.65);border:1px solid rgba(34,48,63,.15);border-radius:9px;padding:2px;gap:2px;}
+  .step-btn{width:25px;height:25px;border:none;background:rgba(255,255,255,.85);color:var(--ink);border-radius:7px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;line-height:1;}
   .step-btn:hover{background:#fff;transform:scale(1.08);}
   .step-btn:active{transform:scale(0.92);}
-  .step-val{font-size:12px;font-weight:600;min-width:38px;text-align:center;color:var(--ink);}
+  .step-val{font-size:11.5px;font-weight:600;min-width:38px;text-align:center;color:var(--ink);}
 
-  [data-period="night"] #panel,[data-period="evening"] #panel{
-    background:rgba(18,24,42,.78);border-color:rgba(255,255,255,.16);box-shadow:0 20px 50px rgba(0,0,0,.45);
+  body[data-period="night"] #panel,body[data-period="evening"] #panel{
+    background:rgba(18,24,42,.84);border-color:rgba(255,255,255,.16);box-shadow:0 20px 50px rgba(0,0,0,.48);
   }
-  [data-period="night"] #panel h3,[data-period="evening"] #panel h3,
-  [data-period="night"] .row label,[data-period="evening"] .row label,
-  [data-period="night"] #speed-label,[data-period="evening"] #speed-label{color:#eef1ff;}
-  [data-period="night"] .stepper-wrap,[data-period="evening"] .stepper-wrap{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);}
-  [data-period="night"] .step-btn,[data-period="evening"] .step-btn{background:rgba(255,255,255,.15);color:#fff;}
-  [data-period="night"] .step-btn:hover,[data-period="evening"] .step-btn:hover{background:rgba(255,255,255,.3);}
-  [data-period="night"] .step-val,[data-period="evening"] .step-val{color:#fff;}
-  [data-period="night"] select,[data-period="evening"] select,
-  [data-period="night"] input[type="text"],[data-period="evening"] input[type="text"]{
+  body[data-period="night"] #panel h3,body[data-period="evening"] #panel h3,
+  body[data-period="night"] .row label,body[data-period="evening"] .row label,
+  body[data-period="night"] #speed-label,body[data-period="evening"] #speed-label,
+  body[data-period="night"] #opacity-val,body[data-period="evening"] #opacity-val{color:#eef1ff;}
+  body[data-period="night"] .section-label,body[data-period="evening"] .section-label{color:rgba(238,241,255,.55);}
+  body[data-period="night"] .time-pill,body[data-period="evening"] .time-pill,
+  body[data-period="night"] .style-pill,body[data-period="evening"] .style-pill{
+    background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);color:#eef1ff;
+  }
+  body[data-period="night"] .time-pill:hover,body[data-period="evening"] .time-pill:hover,
+  body[data-period="night"] .style-pill:hover,body[data-period="evening"] .style-pill:hover{background:rgba(255,255,255,.2);}
+  body[data-period="night"] .time-pill.active,body[data-period="evening"] .time-pill.active,
+  body[data-period="night"] .style-pill.active,body[data-period="evening"] .style-pill.active{
+    background:#5b8def;color:#fff;border-color:#5b8def;box-shadow:0 3px 10px rgba(91,141,239,.5);
+  }
+  body[data-period="night"] .stepper-wrap,body[data-period="evening"] .stepper-wrap{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);}
+  body[data-period="night"] .step-btn,body[data-period="evening"] .step-btn{background:rgba(255,255,255,.15);color:#fff;}
+  body[data-period="night"] .step-btn:hover,body[data-period="evening"] .step-btn:hover{background:rgba(255,255,255,.3);}
+  body[data-period="night"] .step-val,body[data-period="evening"] .step-val{color:#fff;}
+  body[data-period="night"] input[type="text"],body[data-period="evening"] input[type="text"]{
     background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;
   }
-  [data-period="night"] select option,[data-period="evening"] select option{background:#182038;color:#fff;}
-  [data-period="night"] .hint,[data-period="evening"] .hint{color:rgba(238,241,255,.6);}
+  body[data-period="night"] .hint,body[data-period="evening"] .hint{color:rgba(238,241,255,.6);}
 
   /* mobile */
   @media (max-width:640px){
-    #creature{width:34vmin;height:28vmin;left:50vw;top:50vh;}
+    #creature{width:34vmin;height:28vmin;left:50vw;top:56vh;}
     #cat{width:18vmin;height:17vmin;right:8vw;bottom:8vh;}
+    #center-display{top:3vh;}
   }
 </style>
 </head>
-<body data-period="morning">
+<body data-period="morning" class="font-style-glassy">
 
   <div class="sky" id="sky-morning"><div class="sun-glow"></div></div>
   <div class="sky" id="sky-afternoon"><div class="sun-glow"></div></div>
@@ -272,12 +506,17 @@
   <div class="grain"></div>
   <div class="ground"></div>
 
-  <div id="clouds"></div>
-
-  <div id="greeting">
-    <h1><span id="greet-text">Good morning</span><span class="type-cursor" aria-hidden="true"></span></h1>
-    <p id="greet-sub">Take it slow today.</p>
+  <!-- Draggable Center Apple Lock Screen Date, Time & Looping Greeting -->
+  <div id="center-display" title="Drag to reposition anywhere!">
+    <div id="clock-date">Friday, September 25</div>
+    <div id="clock-time">08:00 <span id="clock-ampm">AM</span></div>
+    <div id="greeting">
+      <h1><span id="greet-text">Good morning</span><span class="type-cursor" aria-hidden="true"></span></h1>
+      <p id="greet-sub">Take it slow today.</p>
+    </div>
   </div>
+
+  <div id="clouds"></div>
 
   <div id="stage">
     <div id="creature">
@@ -321,15 +560,17 @@
 
     <div id="panel">
       <h3>Flexibility</h3>
-      <div class="row">
-        <label for="time-select">Time of day</label>
-        <select id="time-select">
-          <option value="auto">Auto</option>
-          <option value="morning">Morning</option>
-          <option value="afternoon">Afternoon</option>
-          <option value="evening">Evening</option>
-          <option value="night">Night</option>
-        </select>
+      
+      <div class="section-label">Environment</div>
+      <div class="row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <label>Time of day</label>
+        <div class="time-pills" id="time-pills">
+          <button type="button" class="time-pill active" data-time="auto">Auto</button>
+          <button type="button" class="time-pill" data-time="morning">Morning</button>
+          <button type="button" class="time-pill" data-time="afternoon">Afternoon</button>
+          <button type="button" class="time-pill" data-time="evening">Evening</button>
+          <button type="button" class="time-pill" data-time="night">Night</button>
+        </div>
       </div>
       <div class="row">
         <label>Clouds</label>
@@ -339,18 +580,47 @@
         <label for="creature-size">Creature size</label>
         <input type="range" id="creature-size" min="0.7" max="1.4" step="0.05" value="1">
       </div>
-      <div class="row">
-        <label for="speed-slider">Typing speed</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="range" id="speed-slider" min="1" max="5" step="1" value="3" style="width:90px;">
-          <span id="speed-label" style="font-size:12px;font-weight:600;min-width:54px;text-align:right;">Normal</span>
+
+      <div class="section-label">Typography Style</div>
+      <div class="row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <label>Font Appearance</label>
+        <div class="style-pills" id="style-pills">
+          <button type="button" class="style-pill active" data-style="glassy">✨ Glassy (Apple Lock)</button>
+          <button type="button" class="style-pill" data-style="normal">Solid / Normal</button>
         </div>
       </div>
+      <div class="row">
+        <label for="opacity-slider">Text opacity</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="opacity-slider" min="0.25" max="1" step="0.05" value="0.95" style="width:90px;">
+          <span id="opacity-val" style="font-size:12px;font-weight:600;min-width:44px;text-align:right;">95%</span>
+        </div>
+      </div>
+
+      <div class="section-label">Clock & Date Sizes</div>
+      <div class="row">
+        <label>Time font size</label>
+        <div class="stepper-wrap">
+          <button type="button" class="step-btn" id="clock-time-down" aria-label="Decrease time size">−</button>
+          <span class="step-val" id="clock-time-val">72px</span>
+          <button type="button" class="step-btn" id="clock-time-up" aria-label="Increase time size">+</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Date font size</label>
+        <div class="stepper-wrap">
+          <button type="button" class="step-btn" id="clock-date-down" aria-label="Decrease date size">−</button>
+          <span class="step-val" id="clock-date-val">14px</span>
+          <button type="button" class="step-btn" id="clock-date-up" aria-label="Increase date size">+</button>
+        </div>
+      </div>
+
+      <div class="section-label">Greeting Sizes</div>
       <div class="row">
         <label>Title font size</label>
         <div class="stepper-wrap">
           <button type="button" class="step-btn" id="title-size-down" aria-label="Decrease title size">−</button>
-          <span class="step-val" id="title-size-val">36px</span>
+          <span class="step-val" id="title-size-val">28px</span>
           <button type="button" class="step-btn" id="title-size-up" aria-label="Increase title size">+</button>
         </div>
       </div>
@@ -358,15 +628,27 @@
         <label>Subtitle size</label>
         <div class="stepper-wrap">
           <button type="button" class="step-btn" id="sub-size-down" aria-label="Decrease subtitle size">−</button>
-          <span class="step-val" id="sub-size-val">15px</span>
+          <span class="step-val" id="sub-size-val">14px</span>
           <button type="button" class="step-btn" id="sub-size-up" aria-label="Increase subtitle size">+</button>
         </div>
       </div>
-      <div class="row" style="align-items:flex-start;flex-direction:column;gap:6px;">
-        <label for="greet-input">Greeting</label>
-        <input type="text" id="greet-input" placeholder="Custom message" style="width:100%;">
+      <div class="row">
+        <label for="speed-slider">Typing speed</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="speed-slider" min="1" max="5" step="1" value="3" style="width:90px;">
+          <span id="speed-label" style="font-size:12px;font-weight:600;min-width:54px;text-align:right;">Normal</span>
+        </div>
       </div>
-      <div class="hint">Click or pet the cat & creature to play with them. Drag clouds or creature around!</div>
+      <div class="row" style="align-items:flex-start;flex-direction:column;gap:6px;">
+        <label for="greet-input">Custom message</label>
+        <input type="text" id="greet-input" placeholder="Type a custom greeting..." style="width:100%;">
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button type="button" id="reset-text-pos" class="time-pill" style="width:100%;padding:8px;font-size:12px;">↺ Reset Text Position</button>
+      </div>
+
+      <div class="hint">Click or drag anything: text, creature, or clouds. Pet the cat & creature to play with them!</div>
     </div>
   </div>
 
@@ -376,6 +658,26 @@
   const skies = { morning:'sky-morning', afternoon:'sky-afternoon', evening:'sky-evening', night:'sky-night' };
   let mode = 'auto';
   let customGreeting = false;
+
+  // ---------- LIVE CLOCK & DATE (CENTER APPLE LOCK SCREEN) ----------
+  const clockTimeEl = document.getElementById('clock-time');
+  const clockDateEl = document.getElementById('clock-date');
+
+  function updateClock(){
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedHours = String(hours).padStart(2, '0');
+    
+    clockTimeEl.innerHTML = `${formattedHours}:${minutes} <span id="clock-ampm">${ampm}</span>`;
+    
+    const options = { weekday: 'long', month: 'long', day: 'numeric' };
+    clockDateEl.textContent = now.toLocaleDateString(undefined, options);
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
 
   // ---------- TYPEWRITER ANIMATION (LOOP) ----------
   const greetTextEl = document.getElementById('greet-text');
@@ -440,71 +742,148 @@
 
   function applyPeriod(p){
     body.setAttribute('data-period', p);
-    Object.values(skies).forEach(id=>document.getElementById(id).classList.remove('active'));
-    document.getElementById(skies[p]).classList.add('active');
+    Object.values(skies).forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.remove('active');
+    });
+    const targetSky = document.getElementById(skies[p]);
+    if(targetSky) targetSky.classList.add('active');
+
     if(!customGreeting){
       const g = { morning:['Good morning','Take it slow today.'],
                   afternoon:['Good afternoon','A calm moment, right here.'],
                   evening:['Good evening','The sky is putting on a show.'],
-                  night:['Good night','Rest easy.'] }[p];
+                  night:['Good night','Rest easy.'] }[p] || ['Good day','Take it slow today.'];
       setGreetingTarget(g[0]);
       document.getElementById('greet-sub').textContent = g[1];
     }
   }
 
   function tick(){
-    const p = mode==='auto' ? periodForHour(new Date().getHours()) : mode;
+    const p = mode === 'auto' ? periodForHour(new Date().getHours()) : mode;
     applyPeriod(p);
   }
   tick();
-  setInterval(tick, 60000);
+  setInterval(tick, 30000);
 
-  document.getElementById('time-select').addEventListener('change', e=>{
-    mode = e.target.value;
+  // Time of Day Buttons (Pills)
+  const timePills = document.querySelectorAll('.time-pill');
+  function setTimeMode(selectedMode){
+    mode = selectedMode;
+    timePills.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-time') === mode);
+    });
     tick();
+  }
+
+  timePills.forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      const chosen = btn.getAttribute('data-time');
+      setTimeMode(chosen);
+    });
   });
 
-  document.getElementById('greet-input').addEventListener('input', e=>{
-    const val = e.target.value.trim();
-    if(val.length){
+  // Font Style Switcher (Glassy vs Normal)
+  const stylePills = document.querySelectorAll('.style-pill');
+  function setFontStyle(style){
+    stylePills.forEach(b => b.classList.toggle('active', b.getAttribute('data-style') === style));
+    body.classList.remove('font-style-glassy', 'font-style-normal');
+    body.classList.add('font-style-' + style);
+  }
+
+  stylePills.forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      const style = btn.getAttribute('data-style');
+      setFontStyle(style);
+    });
+  });
+
+  // Text Transparency / Opacity Slider
+  const opacitySlider = document.getElementById('opacity-slider');
+  const opacityVal = document.getElementById('opacity-val');
+  function setTextOpacity(op){
+    document.documentElement.style.setProperty('--text-opacity', op);
+    opacitySlider.value = op;
+    opacityVal.textContent = Math.round(op * 100) + '%';
+  }
+  opacitySlider.addEventListener('input', e=>{
+    setTextOpacity(parseFloat(e.target.value));
+  });
+
+  // Custom greeting input
+  const greetInput = document.getElementById('greet-input');
+  function setCustomGreeting(text){
+    greetInput.value = text;
+    if(text && text.trim().length){
       customGreeting = true;
-      setGreetingTarget(val);
+      setGreetingTarget(text.trim());
     } else {
       customGreeting = false;
       tick();
     }
-  });
+  }
+  greetInput.addEventListener('input', e => setCustomGreeting(e.target.value));
 
   // Typing speed slider
   const speedSlider = document.getElementById('speed-slider');
   const speedLabel = document.getElementById('speed-label');
-  speedSlider.addEventListener('input', e=>{
-    const level = parseInt(e.target.value, 10);
+  function setTypeSpeed(level){
     const config = speedSettings[level] || speedSettings[3];
     typeSpeedMultiplier = config.speed;
+    speedSlider.value = level;
     speedLabel.textContent = config.name;
     updateTypewriter();
-  });
+  }
+  speedSlider.addEventListener('input', e => setTypeSpeed(parseInt(e.target.value, 10)));
 
   // ---------- FONT SIZE STEPPER CONTROLS ----------
-  let titleFontSize = 36;
-  let subFontSize = 15;
+  let clockTimeSize = 72;
+  let clockDateSize = 14;
+  let titleFontSize = 28;
+  let subFontSize = 14;
+
+  const clockTimeVal = document.getElementById('clock-time-val');
+  const clockDateVal = document.getElementById('clock-date-val');
   const titleValEl = document.getElementById('title-size-val');
   const subValEl = document.getElementById('sub-size-val');
 
   function updateFontSizes(){
+    document.documentElement.style.setProperty('--clock-time-size', clockTimeSize + 'px');
+    document.documentElement.style.setProperty('--clock-date-size', clockDateSize + 'px');
     document.documentElement.style.setProperty('--title-font-size', titleFontSize + 'px');
     document.documentElement.style.setProperty('--sub-font-size', subFontSize + 'px');
+
+    clockTimeVal.textContent = clockTimeSize + 'px';
+    clockDateVal.textContent = clockDateSize + 'px';
     titleValEl.textContent = titleFontSize + 'px';
     subValEl.textContent = subFontSize + 'px';
   }
 
+  // Clock time & date steppers
+  document.getElementById('clock-time-down').addEventListener('click', ()=>{
+    clockTimeSize = Math.max(32, clockTimeSize - 4);
+    updateFontSizes();
+  });
+  document.getElementById('clock-time-up').addEventListener('click', ()=>{
+    clockTimeSize = Math.min(120, clockTimeSize + 4);
+    updateFontSizes();
+  });
+  document.getElementById('clock-date-down').addEventListener('click', ()=>{
+    clockDateSize = Math.max(10, clockDateSize - 1);
+    updateFontSizes();
+  });
+  document.getElementById('clock-date-up').addEventListener('click', ()=>{
+    clockDateSize = Math.min(26, clockDateSize + 1);
+    updateFontSizes();
+  });
+
+  // Greeting title & subtitle steppers
   document.getElementById('title-size-down').addEventListener('click', ()=>{
     titleFontSize = Math.max(16, titleFontSize - 2);
     updateFontSizes();
   });
   document.getElementById('title-size-up').addEventListener('click', ()=>{
-    titleFontSize = Math.min(64, titleFontSize + 2);
+    titleFontSize = Math.min(56, titleFontSize + 2);
     updateFontSizes();
   });
   document.getElementById('sub-size-down').addEventListener('click', ()=>{
@@ -512,10 +891,126 @@
     updateFontSizes();
   });
   document.getElementById('sub-size-up').addEventListener('click', ()=>{
-    subFontSize = Math.min(30, subFontSize + 1);
+    subFontSize = Math.min(26, subFontSize + 1);
     updateFontSizes();
   });
   updateFontSizes();
+
+  // ---------- DRAGGABLE TEXT POSITIONING WITH MEMORY ----------
+  const centerDisplay = document.getElementById('center-display');
+  let isDraggingText = false;
+  let textStartX = 0, textStartY = 0;
+  let initialLeft = 0, initialTop = 0;
+
+  // Restore saved position if available
+  const savedTextPos = localStorage.getItem('drift_text_pos');
+  if(savedTextPos){
+    try {
+      const pos = JSON.parse(savedTextPos);
+      if(pos && typeof pos.x === 'number' && typeof pos.y === 'number'){
+        centerDisplay.style.left = pos.x + 'px';
+        centerDisplay.style.top = pos.y + 'px';
+        centerDisplay.style.transform = 'none';
+      }
+    } catch(e){}
+  }
+
+  centerDisplay.addEventListener('pointerdown', e => {
+    if(e.button !== 0) return;
+    isDraggingText = true;
+    centerDisplay.setPointerCapture(e.pointerId);
+    textStartX = e.clientX;
+    textStartY = e.clientY;
+    const rect = centerDisplay.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    centerDisplay.style.transform = 'none';
+    centerDisplay.style.left = initialLeft + 'px';
+    centerDisplay.style.top = initialTop + 'px';
+  });
+
+  centerDisplay.addEventListener('pointermove', e => {
+    if(!isDraggingText) return;
+    const dx = e.clientX - textStartX;
+    const dy = e.clientY - textStartY;
+    const newX = initialLeft + dx;
+    const newY = initialTop + dy;
+    centerDisplay.style.left = newX + 'px';
+    centerDisplay.style.top = newY + 'px';
+  });
+
+  function stopTextDrag(){
+    if(!isDraggingText) return;
+    isDraggingText = false;
+    const rect = centerDisplay.getBoundingClientRect();
+    localStorage.setItem('drift_text_pos', JSON.stringify({ x: rect.left, y: rect.top }));
+  }
+
+  centerDisplay.addEventListener('pointerup', stopTextDrag);
+  centerDisplay.addEventListener('pointercancel', stopTextDrag);
+
+  document.getElementById('reset-text-pos').addEventListener('click', ()=>{
+    localStorage.removeItem('drift_text_pos');
+    centerDisplay.style.left = '50%';
+    centerDisplay.style.top = '4.5vh';
+    centerDisplay.style.transform = 'translateX(-50%)';
+  });
+
+  // Cloud toggle
+  const cloudToggle = document.getElementById('cloud-toggle');
+  const cloudsEl = document.getElementById('clouds');
+  function setShowClouds(show){
+    cloudToggle.classList.toggle('on', show);
+    cloudsEl.classList.toggle('hidden', !show);
+  }
+  cloudToggle.addEventListener('click', function(){
+    this.classList.toggle('on');
+    cloudsEl.classList.toggle('hidden', !this.classList.contains('on'));
+  });
+
+  // Creature size
+  const creatureSizeSlider = document.getElementById('creature-size');
+  function setCreatureScale(scale){
+    document.documentElement.style.setProperty('--creature-scale', scale);
+    creatureSizeSlider.value = scale;
+  }
+  creatureSizeSlider.addEventListener('input', e => setCreatureScale(e.target.value));
+
+  // ---------- COMPLETE LIVELY WALLPAPER PROPERTY INTEGRATION ----------
+  window.livelyPropertyListener = function(name, val){
+    if(name === 'timeMode'){
+      const modes = ['auto', 'morning', 'afternoon', 'evening', 'night'];
+      const m = typeof val === 'number' ? modes[val] : val;
+      if(m) setTimeMode(m);
+    } else if(name === 'fontStyle'){
+      const styles = ['glassy', 'normal'];
+      const s = typeof val === 'number' ? styles[val] : val;
+      if(s) setFontStyle(s);
+    } else if(name === 'textOpacity'){
+      setTextOpacity(val / 100);
+    } else if(name === 'clockTimeSize'){
+      clockTimeSize = val;
+      updateFontSizes();
+    } else if(name === 'clockDateSize'){
+      clockDateSize = val;
+      updateFontSizes();
+    } else if(name === 'titleFontSize'){
+      titleFontSize = val;
+      updateFontSizes();
+    } else if(name === 'subFontSize'){
+      subFontSize = val;
+      updateFontSizes();
+    } else if(name === 'typeSpeed'){
+      const speedIdx = (typeof val === 'number' ? val : 2) + 1;
+      setTypeSpeed(speedIdx);
+    } else if(name === 'customGreeting'){
+      setCustomGreeting(val);
+    } else if(name === 'showClouds'){
+      setShowClouds(Boolean(val));
+    } else if(name === 'creatureSize'){
+      setCreatureScale(val / 100);
+    }
+  };
 
   // stars
   const starfield = document.getElementById('starfield');
@@ -579,7 +1074,6 @@
       <ellipse cx="155" cy="62" rx="38" ry="24"/>
       </g></svg>`;
   }
-  const cloudsEl = document.getElementById('clouds');
   const cloudDefs = [
     {w:22,x:8,y:12},{w:16,x:62,y:8},{w:26,x:36,y:20},{w:14,x:82,y:22},{w:18,x:14,y:30}
   ];
@@ -592,10 +1086,6 @@
     el.innerHTML = cloudSVG();
     cloudsEl.appendChild(el);
     makeDraggable(el);
-  });
-  document.getElementById('cloud-toggle').addEventListener('click', function(){
-    this.classList.toggle('on');
-    cloudsEl.classList.toggle('hidden', !this.classList.contains('on'));
   });
 
   // generic drag helper
@@ -634,7 +1124,7 @@
   const blushL = creature.querySelector('.c-blush.left'), blushR = creature.querySelector('.c-blush.right');
   const mouth = creature.querySelector('.c-mouth');
 
-  let cx = window.innerWidth*0.38, cy = window.innerHeight*0.56;
+  let cx = window.innerWidth*0.38, cy = window.innerHeight*0.58;
   let vx=0, vy=0, dragging=false, lastX=0, lastY=0, lastT=0;
   creature.style.left = cx+'px'; creature.style.top = cy+'px';
   creature.style.position='fixed'; creature.style.transformOrigin='center';
@@ -674,7 +1164,6 @@
     const rect = creature.getBoundingClientRect();
     const midX = rect.left + rect.width/2, midY = rect.top + rect.height/2;
 
-    // Happy reaction
     creatureBody.style.transform = 'scale(1.18, 0.82)';
     [eyeL, eyeR].forEach(el => el.classList.add('happy'));
     [blushL, blushR].forEach(el => el.classList.add('extra'));
@@ -691,7 +1180,7 @@
     }, 450);
   });
 
-  // Creature double-click activity (excited flip jump)
+  // Creature double-click activity (flip jump)
   creature.addEventListener('dblclick', ()=>{
     creature.classList.add('creature-flip');
     const rect = creature.getBoundingClientRect();
@@ -747,11 +1236,6 @@
     requestAnimationFrame(physics);
   }
   requestAnimationFrame(physics);
-
-  // creature size slider
-  document.getElementById('creature-size').addEventListener('input', e=>{
-    document.documentElement.style.setProperty('--creature-scale', e.target.value);
-  });
 
   // ---------- CAT: ACTIVITIES & INTERACTIONS ----------
   const cat = document.getElementById('cat');
