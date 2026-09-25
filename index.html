@@ -462,6 +462,17 @@
   .step-btn:active{transform:scale(0.92);}
   .step-val{font-size:11.5px;font-weight:600;min-width:38px;text-align:center;color:var(--ink);}
 
+  /* Master Reset Button */
+  .reset-master-btn{
+    width:100%;padding:9px 12px;font-size:12px;font-weight:700;font-family:var(--font);
+    background:rgba(255,255,255,.65);border:1px solid rgba(34,48,63,.15);border-radius:10px;
+    color:var(--ink);cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .reset-master-btn:hover{
+    background:#e04848;color:#ffffff;border-color:#e04848;box-shadow:0 4px 14px rgba(224,72,72,.35);transform:translateY(-1px);
+  }
+  .reset-master-btn:active{transform:scale(0.97);}
+
   body[data-period="night"] #panel,body[data-period="evening"] #panel{
     background:rgba(18,24,42,.84);border-color:rgba(255,255,255,.16);box-shadow:0 20px 50px rgba(0,0,0,.48);
   }
@@ -486,6 +497,12 @@
   body[data-period="night"] .step-val,body[data-period="evening"] .step-val{color:#fff;}
   body[data-period="night"] input[type="text"],body[data-period="evening"] input[type="text"]{
     background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;
+  }
+  body[data-period="night"] .reset-master-btn,body[data-period="evening"] .reset-master-btn{
+    background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#eef1ff;
+  }
+  body[data-period="night"] .reset-master-btn:hover,body[data-period="evening"] .reset-master-btn:hover{
+    background:#e04848;color:#fff;border-color:#e04848;box-shadow:0 4px 16px rgba(224,72,72,.5);
   }
   body[data-period="night"] .hint,body[data-period="evening"] .hint{color:rgba(238,241,255,.6);}
 
@@ -644,8 +661,9 @@
         <input type="text" id="greet-input" placeholder="Type a custom greeting..." style="width:100%;">
       </div>
 
-      <div class="row" style="margin-top:10px;">
-        <button type="button" id="reset-text-pos" class="time-pill" style="width:100%;padding:8px;font-size:12px;">↺ Reset Text Position</button>
+      <!-- Master Reset Section at the bottom -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);display:flex;flex-direction:column;gap:8px;">
+        <button type="button" id="reset-all-btn" class="reset-master-btn" title="Reset everything to default">↺ Reset All to Defaults</button>
       </div>
 
       <div class="hint">Click or drag anything: text, creature, or clouds. Pet the cat & creature to play with them!</div>
@@ -949,13 +967,6 @@
   centerDisplay.addEventListener('pointerup', stopTextDrag);
   centerDisplay.addEventListener('pointercancel', stopTextDrag);
 
-  document.getElementById('reset-text-pos').addEventListener('click', ()=>{
-    localStorage.removeItem('drift_text_pos');
-    centerDisplay.style.left = '50%';
-    centerDisplay.style.top = '4.5vh';
-    centerDisplay.style.transform = 'translateX(-50%)';
-  });
-
   // Cloud toggle
   const cloudToggle = document.getElementById('cloud-toggle');
   const cloudsEl = document.getElementById('clouds');
@@ -968,13 +979,48 @@
     cloudsEl.classList.toggle('hidden', !this.classList.contains('on'));
   });
 
-  // Creature size
+  // Creature size & scale
   const creatureSizeSlider = document.getElementById('creature-size');
   function setCreatureScale(scale){
     document.documentElement.style.setProperty('--creature-scale', scale);
     creatureSizeSlider.value = scale;
   }
   creatureSizeSlider.addEventListener('input', e => setCreatureScale(e.target.value));
+
+  // ---------- MASTER RESET ALL TO DEFAULTS ----------
+  function resetAllToDefaults(){
+    setTimeMode('auto');
+    setShowClouds(true);
+    setCreatureScale(1);
+
+    // Reset creature position
+    cx = window.innerWidth * 0.38;
+    cy = window.innerHeight * 0.58;
+    vx = 0; vy = 0;
+    place();
+
+    setFontStyle('glassy');
+    setTextOpacity(0.95);
+
+    clockTimeSize = 72;
+    clockDateSize = 14;
+    titleFontSize = 28;
+    subFontSize = 14;
+    updateFontSizes();
+
+    setTypeSpeed(3);
+    setCustomGreeting('');
+
+    localStorage.removeItem('drift_text_pos');
+    centerDisplay.style.left = '50%';
+    centerDisplay.style.top = '4.5vh';
+    centerDisplay.style.transform = 'translateX(-50%)';
+
+    const rect = gear.getBoundingClientRect();
+    spawnEmote(rect.left + rect.width/2, rect.bottom + 20, '✨');
+  }
+
+  document.getElementById('reset-all-btn').addEventListener('click', resetAllToDefaults);
 
   // ---------- COMPLETE LIVELY WALLPAPER PROPERTY INTEGRATION ----------
   window.livelyPropertyListener = function(name, val){
@@ -1009,6 +1055,8 @@
       setShowClouds(Boolean(val));
     } else if(name === 'creatureSize'){
       setCreatureScale(val / 100);
+    } else if(name === 'resetDefaults'){
+      resetAllToDefaults();
     }
   };
 
