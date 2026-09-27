@@ -1,0 +1,78 @@
+{
+  "showSpotify": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Enable Spotify Box"
+  },
+  "spotifyOnlyPlaying": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Only Show When Music Is Playing"
+  },
+  "showLyrics": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Background Synced Lyrics (Spotify Style)"
+  },
+  "lyricsSize": {
+    "type": "slider",
+    "value": 28,
+    "min": 18,
+    "max": 44,
+    "step": 2,
+    "text": "Lyrics Text Size (px)"
+  },
+  "timeMode": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Time of Day",
+    "items": ["Auto (Live Clock)", "Morning", "Afternoon", "Sunset Evening", "Starry Night"]
+  },
+  "fontStyle": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Typography Style",
+    "items": ["Glassy (Apple Lock Frosted)", "Solid / Normal"]
+  },
+  "textOpacity": {
+    "type": "slider",
+    "value": 95,
+    "min": 25,
+    "max": 100,
+    "step": 5,
+    "text": "Text Opacity (%)"
+  },
+  "showClouds": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Floating Clouds"
+  },
+  "catSize": {
+    "type": "slider",
+    "value": 100,
+    "min": 70,
+    "max": 150,
+    "step": 5,
+    "text": "Cat Companion Scale (%)"
+  },
+  "customGreeting": {
+    "type": "textbox",
+    "value": "",
+    "text": "Custom Greeting Message"
+  },
+  "spotifyClientId": {
+    "type": "textbox",
+    "value": "",
+    "text": "Spotify Client ID (paste here to stay connected across restarts)"
+  },
+  "spotifyRefreshToken": {
+    "type": "textbox",
+    "value": "",
+    "text": "Spotify Refresh Token (paste here to stay connected across restarts)"
+  },
+  "spotifyClientSecret": {
+    "type": "textbox",
+    "value": "",
+    "text": "Spotify Client Secret (optional, only if your app requires it)"
+  }
+}

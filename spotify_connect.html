@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Connection Setup — Drift Wallpaper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --bg: linear-gradient(135deg, #0b1220 0%, #111e38 50%, #0d1527 100%);
+      --glass: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --card-bg: rgba(20, 28, 48, 0.78);
+      --ink: #f0f4fc;
+      --ink-soft: rgba(240, 244, 252, 0.65);
+      --spotify-green: #1ed760;
+      --spotify-dark: #121212;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 580px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .back-link {
+      color: var(--ink-soft);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      transition: all .2s ease;
+    }
+
+    .back-link:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      transform: translateX(-2px);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 580px;
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 0 32px rgba(30, 215, 96, 0.12);
+      padding: 34px 28px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      fill: var(--spotify-green);
+      filter: drop-shadow(0 0 10px rgba(30, 215, 96, 0.5));
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    p.subtitle {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+
+    .connected-banner {
+      background: rgba(30, 215, 96, 0.14);
+      border: 1px solid rgba(30, 215, 96, 0.35);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .connected-banner.active {
+      display: flex;
+    }
+
+    .connected-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #86efac;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #1ed760;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #1ed760;
+      display: inline-block;
+    }
+
+    .step-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+    }
+
+    .step-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--spotify-green);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--spotify-green);
+      box-shadow: 0 0 0 3px rgba(30, 215, 96, 0.25);
+    }
+
+    .code-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 8px 12px;
+      gap: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #bbf7d0;
+      word-break: break-all;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 14px;
+      border: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all .2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--spotify-green);
+      color: #051a0b;
+      box-shadow: 0 4px 16px rgba(30, 215, 96, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: #23f26f;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(30, 215, 96, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .status-card {
+      padding: 18px 20px;
+      border-radius: 16px;
+      margin-top: 18px;
+      font-size: 13.5px;
+      font-weight: 500;
+      display: none;
+      animation: fadeIn .3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-card.success {
+      display: block;
+      background: rgba(30, 215, 96, 0.16);
+      border: 1px solid rgba(30, 215, 96, 0.45);
+      color: #bbf7d0;
+    }
+
+    .status-card.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .badge-step {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      background: var(--spotify-green);
+      color: #051a0b;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="index.html" class="back-link">
+      <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      <span>Return to Wallpaper</span>
+    </a>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <svg class="logo-icon" viewBox="0 0 24 24">
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.308c-.221.363-.69.477-1.053.256-2.885-1.763-6.516-2.162-10.792-1.184-.413.094-.827-.163-.92-.577-.095-.413.163-.827.577-.92 4.685-1.071 8.696-.62 11.932 1.372.363.221.477.69.256 1.053zm1.47-3.268c-.277.452-.87.596-1.322.318-3.303-2.03-8.338-2.617-12.247-1.43-.51.155-1.05-.137-1.205-.647-.155-.51.137-1.05.647-1.205 4.464-1.355 10.015-.705 13.808 1.642.452.277.596.87.318 1.322zm.126-3.41c-3.962-2.353-10.5-2.57-14.303-1.416-.607.185-1.25-.164-1.435-.77-.185-.607.164-1.25.77-1.436 4.364-1.325 11.583-1.07 16.14 1.637.548.326.732 1.037.406 1.585-.326.548-1.037.732-1.578.4z"/>
+      </svg>
+      <div>
+        <h1>Spotify Connection Setup</h1>
+        <p class="subtitle">1-Click OAuth Setup for Drift Wallpaper</p>
+      </div>
+    </div>
+
+    <!-- Banner if already connected -->
+    <div class="connected-banner" id="already-connected-banner">
+      <div class="connected-info">
+        <span class="live-dot"></span>
+        <span>Spotify is currently connected!</span>
+      </div>
+      <a href="index.html" class="btn btn-primary" style="width:auto;padding:7px 14px;font-size:12px;">Open Wallpaper</a>
+    </div>
+
+    <!-- Step 1: Spotify App Config -->
+    <div class="step-card">
+      <div class="step-title"><span class="badge-step">1</span> Spotify App Credentials</div>
+      <div class="form-group">
+        <label for="client-id">Spotify Client ID <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:var(--spotify-green);margin-left:6px;text-decoration:underline;">(Get one from Spotify Dashboard)</a></label>
+        <input type="text" id="client-id" value="" placeholder="Paste your 32-character Client ID here">
+      </div>
+      <div class="form-group">
+        <label>Redirect URI (Must match what you add in Spotify Dashboard)</label>
+        <div class="code-box">
+          <span id="redirect-uri-text"></span>
+          <button type="button" class="copy-btn" id="copy-uri-btn">Copy URI</button>
+        </div>
+      </div>
+      <p class="hint">💡 <strong>Quick Steps in Spotify Dashboard:</strong><br>
+      1. Open <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:var(--spotify-green);">developer.spotify.com/dashboard</a>.<br>
+      2. Click <strong>Create App</strong> (or open your existing App), paste the <strong>Redirect URI</strong> above into <em>Redirect URIs</em>, check <em>Web API</em>, and Save.<br>
+      3. Copy your <strong>Client ID</strong> from Settings and paste it above!</p>
+    </div>
+
+    <!-- Step 2: One-click connect -->
+    <div class="step-card">
+      <div class="step-title"><span class="badge-step">2</span> Authorize Account</div>
+      <button type="button" class="btn btn-primary" id="login-btn">
+        <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.308c-.221.363-.69.477-1.053.256-2.885-1.763-6.516-2.162-10.792-1.184-.413.094-.827-.163-.92-.577-.095-.413.163-.827.577-.92 4.685-1.071 8.696-.62 11.932 1.372.363.221.477.69.256 1.053zm1.47-3.268c-.277.452-.87.596-1.322.318-3.303-2.03-8.338-2.617-12.247-1.43-.51.155-1.05-.137-1.205-.647-.155-.51.137-1.05.647-1.205 4.464-1.355 10.015-.705 13.808 1.642.452.277.596.87.318 1.322zm.126-3.41c-3.962-2.353-10.5-2.57-14.303-1.416-.607.185-1.25-.164-1.435-.77-.185-.607.164-1.25.77-1.436 4.364-1.325 11.583-1.07 16.14 1.637.548.326.732 1.037.406 1.585-.326.548-1.037.732-1.578.4z"/></svg>
+        <span>Authorize with Spotify</span>
+      </button>
+    </div>
+
+    <!-- Status Card -->
+    <div class="status-card" id="status-card">
+      <div id="status-message"></div>
+      <div id="status-actions" style="margin-top:14px;display:flex;gap:8px;">
+        <button type="button" class="btn btn-primary" id="open-wallpaper-btn" style="padding:10px 16px;font-size:13px;">Return to Wallpaper</button>
+        <button type="button" class="btn btn-secondary" id="copy-token-btn" style="padding:10px 16px;font-size:13px;">Copy Token</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const clientIdInput = document.getElementById('client-id');
+    const redirectUriText = document.getElementById('redirect-uri-text');
+    const copyUriBtn = document.getElementById('copy-uri-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const statusCard = document.getElementById('status-card');
+    const statusMessage = document.getElementById('status-message');
+    const openWallpaperBtn = document.getElementById('open-wallpaper-btn');
+    const copyTokenBtn = document.getElementById('copy-token-btn');
+    const alreadyConnectedBanner = document.getElementById('already-connected-banner');
+
+    // Retrieve saved client ID or URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramClientId = urlParams.get('client_id');
+    const savedClientId = paramClientId || localStorage.getItem('drift_spotify_client_id') || '';
+    if (savedClientId) clientIdInput.value = savedClientId;
+
+    // Check if already connected
+    const existingRefreshToken = localStorage.getItem('drift_spotify_refresh_token');
+    if (existingRefreshToken && alreadyConnectedBanner) {
+      alreadyConnectedBanner.classList.add('active');
+    }
+
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
+    redirectUriText.textContent = currentUrl;
+
+    copyUriBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(currentUrl);
+      copyUriBtn.textContent = 'Copied!';
+      setTimeout(() => { copyUriBtn.textContent = 'Copy URI'; }, 1800);
+    });
+
+    function generateRandomString(length) {
+      let text = '';
+      const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+      for (let i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return text;
+    }
+
+    async function generateCodeChallenge(codeVerifier) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(codeVerifier);
+      const digest = await window.crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      const clientId = (clientIdInput.value || '').trim();
+      if (!clientId) {
+        alert('Please enter your Spotify Client ID first.');
+        clientIdInput.focus();
+        return;
+      }
+
+      localStorage.setItem('drift_spotify_client_id', clientId);
+      const verifier = generateRandomString(64);
+      const challenge = await generateCodeChallenge(verifier);
+      localStorage.setItem('drift_pkce_verifier', verifier);
+
+      const scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+      const authUrl = new URL('https://accounts.spotify.com/authorize');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('redirect_uri', currentUrl);
+      authUrl.searchParams.set('scope', scope);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
+      authUrl.searchParams.set('code_challenge', challenge);
+
+      window.location.href = authUrl.toString();
+    });
+
+    // Check for authorization code on return
+    async function checkCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const error = params.get('error');
+
+      if (error) {
+        statusCard.className = 'status-card error';
+        statusMessage.innerHTML = `❌ <strong>Spotify authorization failed:</strong> ${error}<br><small>Make sure the Redirect URI in your Spotify App Settings exactly matches: <code>${currentUrl}</code></small>`;
+        return;
+      }
+
+      if (code) {
+        const verifier = localStorage.getItem('drift_pkce_verifier');
+        const clientId = (clientIdInput.value || '').trim() || localStorage.getItem('drift_spotify_client_id');
+
+        statusCard.className = 'status-card success';
+        statusMessage.textContent = '⏳ Exchanging authorization code for permanent refresh token...';
+
+        try {
+          const body = new URLSearchParams({
+            client_id: clientId,
+            grant_type: 'authorization_code',
+            code: code,
+            redirect_uri: currentUrl,
+            code_verifier: verifier
+          });
+
+          const res = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+
+          const data = await res.json();
+          if (res.ok && data.refresh_token) {
+            localStorage.setItem('drift_spotify_refresh_token', data.refresh_token);
+            if (data.access_token) {
+              localStorage.setItem('drift_spotify_access_token', data.access_token);
+            }
+            if (clientId) {
+              localStorage.setItem('drift_spotify_client_id', clientId);
+            }
+
+            let countdown = 3;
+            statusMessage.innerHTML = `🎉 <strong>Spotify Connected Successfully!</strong><br>Your permanent Refresh Token is saved. Returning to your wallpaper in <strong id="redirect-counter">${countdown}</strong>s...`;
+            
+            copyTokenBtn.onclick = () => {
+              navigator.clipboard.writeText(data.refresh_token);
+              copyTokenBtn.textContent = 'Copied!';
+              setTimeout(() => { copyTokenBtn.textContent = 'Copy Token'; }, 2000);
+            };
+
+            openWallpaperBtn.onclick = () => {
+              window.location.href = 'index.html';
+            };
+
+            const interval = setInterval(() => {
+              countdown--;
+              const counterEl = document.getElementById('redirect-counter');
+              if (counterEl) counterEl.textContent = countdown;
+              if (countdown <= 0) {
+                clearInterval(interval);
+                window.location.href = 'index.html';
+              }
+            }, 1000);
+
+          } else {
+            statusCard.className = 'status-card error';
+            const errorDesc = data.error_description || data.error || 'Check Client ID / Redirect URI';
+            statusMessage.innerHTML = `❌ <strong>Token exchange failed:</strong> ${errorDesc}<br><small>Ensure Redirect URI in Spotify Dashboard is exactly: <code>${currentUrl}</code></small>`;
+          }
+        } catch (err) {
+          statusCard.className = 'status-card error';
+          statusMessage.textContent = '❌ Network error during token exchange: ' + err.message;
+        }
+      }
+    }
+
+    checkCallback();
+  </script>
+</body>
+</html>
